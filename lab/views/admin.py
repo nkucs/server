@@ -40,11 +40,14 @@ class GetLabAPI(APIView):
 
     def get(self, request):
         lab_id = request.GET.get('lab_id')
-        # 检查
+        # check if lab_id exists
         if not lab_id:
+            #not found
             return self.error(msg=f"lab_id key is None", err=request.GET)
         try:
+            # query for the lab
             lab_object = Lab.objects.get(id=lab_id)
             return self.success(GetLabSerializer(lab_object).data)
         except Exception as e:
+            # not found
             return self.error(msg=str(e), err=e.args)
