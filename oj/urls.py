@@ -16,5 +16,6 @@ Including another URLconf
 from django.conf.urls import include, url
 
 urlpatterns = [
-    url(r"^api/", include("demo.urls.oj"))
+    url(r"^api/", include("demo.urls.oj")),
+    url(r"^teacher/lab/", include("lab.urls.admin")),
 ]
