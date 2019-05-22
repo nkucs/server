@@ -28,3 +28,4 @@ class GetLabsAPI(APIView):
             return self.success(response_object)
         except Exception as exception:
             return self.error(msg=exception, err=type(exception))
+            
