@@ -1,4 +1,5 @@
-from utils.api import APIView, JSONResponse
+from course.models import CourseResource
+from utils.api import APIView, JSONResponse, FILEResponse
 from ..serializers import LabSerializers1
 from ..models import Lab
 
@@ -28,4 +29,26 @@ class GetLabsAPI(APIView):
             return self.success(response_object)
         except Exception as exception:
             return self.error(msg=exception, err=type(exception))
-            
+
+
+class GetSubmissionFileAPI(APIView):
+    """
+    Get a file of a lab.
+    API: get-submission-file
+    """
+
+    response_class = FILEResponse
+
+    def get(self, request):
+        attachment_id = request.GET.get('attachment_id')
+        # check if attachment_id exists
+        if not attachment_id:
+            # not found
+            return self.error(msg=f'key "attachment_id" is None', err=request.GET)
+        try:
+            # query for the lab
+            course_resource = CourseResource.objects.get(id=attachment_id)
+            return self.response(course_resource.file)
+        except Exception as e:
+            # not found
+            return self.error(msg=str(e), err=e.args)
