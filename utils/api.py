@@ -3,7 +3,8 @@ import json
 import logging
 from collections import OrderedDict
 
-from django.http import HttpResponse, QueryDict
+from django.core.files import File
+from django.http import HttpResponse, QueryDict, FileResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
@@ -48,6 +49,17 @@ class JSONResponse(object):
     def response(cls, data):
         resp = HttpResponse(json.dumps(data, indent=4), content_type=cls.content_type)
         resp.data = data
+        return resp
+
+
+class FILEResponse(object):
+
+    @classmethod
+    def response(cls, data):
+        if isinstance(data, File):
+            resp = FileResponse(data, as_attachment=True)
+        else:
+            resp = JSONResponse.response(data)
         return resp
 
 
