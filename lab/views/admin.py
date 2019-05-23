@@ -1,6 +1,8 @@
+
 from course.models import CourseResource
 from utils.api import APIView, JSONResponse, FILEResponse
-from ..serializers import LabSerializers1
+from ..serializers import LabSerializers1, GetLabSerializer
+
 from ..models import Lab
 
 class GetLabsAPI(APIView):
@@ -30,7 +32,6 @@ class GetLabsAPI(APIView):
         except Exception as exception:
             return self.error(msg=exception, err=type(exception))
 
-
 class GetSubmissionFileAPI(APIView):
     """
     Get a file of a lab.
@@ -49,6 +50,28 @@ class GetSubmissionFileAPI(APIView):
             # query for the lab
             course_resource = CourseResource.objects.get(id=attachment_id)
             return self.response(course_resource.file)
+        except Exception as e:
+            # not found
+            return self.error(msg=str(e), err=e.args)
+
+class GetLabAPI(APIView):
+    """
+    Get data of a lab.
+    API: get-lab
+    """
+
+    response_class = JSONResponse
+
+    def get(self, request):
+        lab_id = request.GET.get('lab_id')
+        # check if lab_id exists
+        if not lab_id:
+            #not found
+            return self.error(msg=f"lab_id key is None", err=request.GET)
+        try:
+            # query for the lab
+            lab_object = Lab.objects.get(id=lab_id)
+            return self.success(GetLabSerializer(lab_object).data)
         except Exception as e:
             # not found
             return self.error(msg=str(e), err=e.args)
