@@ -69,3 +69,28 @@ def get_all_course(request):
     response['courses'] = get_course_info(courses)
     response['errorNum'] = SUCCESS
     return JsonResponse(response)
+    
+def get_my_course(request):
+    response = dict()
+    teacher_number = request.GET.get('teacherNumber')
+    page_length = request.GET.get('pageLength')
+    page = request.GET.get('page')
+    teacher = Teacher.objects.get(teacher_number=teacher_number)
+    courses_teacher = CourseTeacher.objects.filter(teacher=teacher)
+    paginator = Paginator(courses_teacher, page_length)
+    response['totalPages'] = paginator.num_pages
+    try:
+        courses_teacher = paginator.page(page)
+        response['currentPage'] = page
+    except PageNotAnInteger:
+        courses_teacher = paginator.page(1)
+        response['currentPage'] = 1
+    except EmptyPage:
+        courses_teacher = paginator.page(paginator.num_pages)
+        response['currentPage'] = paginator.num_pages
+    courses = list()
+    for course in courses_teacher:
+        courses.append(course.course)
+    response['courses'] = get_course_info(courses)
+    response['errorNum'] = SUCCESS
+    return JsonResponse(response)
