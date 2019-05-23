@@ -6,6 +6,7 @@ class CreateLectureAPI(APIView):
     response_class = JSONResponse
     def post(self, request):
         response_object = dict()
+        # get information from frontend
         try:
             course_id = int(request.POST.get('course_id'))
             name = request.POST.get('name')
