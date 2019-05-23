@@ -1,5 +1,5 @@
 from utils.api import APIView, JSONResponse
-from ..serializers import LabSerializers1
+from ..serializers import LabSerializers1, GetLabSerializer
 from ..models import Lab
 
 class GetLabsAPI(APIView):
@@ -28,4 +28,26 @@ class GetLabsAPI(APIView):
             return self.success(response_object)
         except Exception as exception:
             return self.error(msg=exception, err=type(exception))
-            
+
+
+class GetLabAPI(APIView):
+    """
+    Get data of a lab.
+    API: get-lab
+    """
+
+    response_class = JSONResponse
+
+    def get(self, request):
+        lab_id = request.GET.get('lab_id')
+        # check if lab_id exists
+        if not lab_id:
+            #not found
+            return self.error(msg=f"lab_id key is None", err=request.GET)
+        try:
+            # query for the lab
+            lab_object = Lab.objects.get(id=lab_id)
+            return self.success(GetLabSerializer(lab_object).data)
+        except Exception as e:
+            # not found
+            return self.error(msg=str(e), err=e.args)
