@@ -1,4 +1,3 @@
-
 from course.models import CourseResource
 from utils.api import APIView, JSONResponse, FILEResponse
 from ..serializers import LabSerializers1, GetLabSerializer
@@ -31,6 +30,16 @@ class GetLabsAPI(APIView):
             return self.success(response_object)
         except Exception as exception:
             return self.error(msg=exception, err=type(exception))
+
+class DeleteLabAPI(APIView):
+    def post(self, request):
+        try:
+            lab_id = int(request.POST.get('lab_id'))
+            Lab.objects.get(id=lab_id).delete()
+        except Exception as e:
+            return self.error(err=e.args, msg="lab_id: %s"%(request.POST.get('lab_id')))
+        else:
+            return self.success({'msg': 'success'})
 
 class GetSubmissionFileAPI(APIView):
     """
