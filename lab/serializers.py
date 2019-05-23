@@ -3,7 +3,7 @@ from .models import Lab
 from course.models import CourseResource
 
 
-class LabSerializers1(serializers.ModelSerializer):
+class LabSerializers(serializers.ModelSerializer):
     lab_id = serializers.SerializerMethodField()
 
     class Meta:
