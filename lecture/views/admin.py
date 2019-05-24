@@ -3,7 +3,6 @@ from lecture.models import Lecture
 from django.db import models
 from course.models import Course
 from lecture.serializers import LectureSerializers
-import math
 from ..serializers import LectureSerializers, GetLectureSerializer
 
 class CreateLectureAPI(APIView):
@@ -43,7 +42,7 @@ class GetMyLecturesAPI(APIView):
             # query from database
             lectures_amount = Lecture.objects.filter(course=course_id).count()
             lectures_list = Lecture.objects.filter(course=course_id)[(page - 1) * page_length : page * page_length].values('id', 'name')
-            response_object['total_pages'] = math.ceil(lectures_amount / page_length)
+            response_object['total_counts'] = lectures_amount
             response_object['lectures'] = LectureSerializers(lectures_list, many=True).data
             return self.success(response_object)
         except Exception as exception:
@@ -65,4 +64,3 @@ class GetLectureAPI(APIView):
         except Exception as e:
             # not found
             return self.error(msg=str(e), err=e.args)
-
