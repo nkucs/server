@@ -37,3 +37,4 @@ class GetLectureSerializer(serializers.ModelSerializer):
 
     def get_files(self, obj):
         return GetLectureFileSerializer(obj.resources, many=True).data
+
