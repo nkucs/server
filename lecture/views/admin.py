@@ -2,6 +2,7 @@ from utils.api import APIView, JSONResponse
 from lecture.models import Lecture
 from django.db import models
 from course.models import Course
+from ..serializers import LectureSerializers, GetLectureSerializer
 class CreateLectureAPI(APIView):
     response_class = JSONResponse
     def post(self, request):
@@ -21,3 +22,20 @@ class CreateLectureAPI(APIView):
             return self.success(response_object)
         except Exception as exception:
             return self.error(err=exception, msg=str(exception))
+
+
+class GetLectureAPI(APIView):
+    response_class = JSONResponse
+
+    def get(self, request):
+        lecture_id = request.GET.get('lecture_id')
+        if not lecture_id:
+            #not found
+            return self.error(msg=f"lecture_id key is None", err=request.GET)
+        try:
+            # query for the lecture
+            lecture_object = Lecture.objects.get(id=lecture_id)
+            return self.success(GetLectureSerializer(lecture_object).data)
+        except Exception as e:
+            # not found
+            return self.error(msg=str(e), err=e.args)
