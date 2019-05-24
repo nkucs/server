@@ -1,13 +1,40 @@
 from rest_framework import serializers
 from .models import Lecture
+from course.models import CourseResource
+
 
 class LectureSerializers(serializers.ModelSerializer):
     lecture_id = serializers.SerializerMethodField()
-    name = serializers.SerializerMethodField()
+
     class Meta:
         model = Lecture
         fields = ('lecture_id', 'name')
+
     def get_lecture_id(self, obj):
         return obj['id']
-    def get_name(self, obj):
-        return obj['name']
+
+class GetLectureFileSerializer(serializers.ModelSerializer):
+    """
+    Serialize 'resources' attribute of a Lecture object.
+    API: get-lecture
+    """
+
+    class Meta:
+        model = CourseResource
+        fields = ('id', 'name')
+
+class GetLectureSerializer(serializers.ModelSerializer):
+    """
+    Serialize a Lecture object.
+    API: get-lecture
+    """
+
+    files = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Lecture
+        fields = ('name', 'description', 'files')
+
+    def get_files(self, obj):
+        return GetLectureFileSerializer(obj.resources, many=True).data
+
