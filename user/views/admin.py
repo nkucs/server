@@ -26,7 +26,6 @@ class CreateRoleAPI(APIView):
     response_class = JSONResponse
 
     def post(self, request):
-        response_object = dict()
         # get information from frontend
         try:
             name = request.data.get('name')
@@ -48,5 +47,52 @@ class CreateRoleAPI(APIView):
             for per in permission:
                 role.permission.add(Permission.objects.get(id=per))
             return self.success(RoleSerializers(role).data)
+        except Exception as exception:
+            return self.error(err=exception.args)
+
+
+class GetRoleListAPI(APIView):
+    response_class = JSONResponse
+    # get方法，参数用params放在url后面
+
+    def post(self, request):
+        response_object = dict()
+        # get information from frontend
+        try:
+            items = int(request.data.get('items_per_page'))
+            page = int(request.data.get('page'))
+            searchDict = request.data.get("search_request")
+            if(searchDict['role_id'] != ""):
+                id = int(searchDict['role_id'])
+            name = searchDict["role_name"]
+            description = searchDict["role_description"]
+        except Exception as exception:
+            return self.error(err=[400])
+        try:
+            if(searchDict['role_id'] != ""):
+                roles = Role.objects.filter(
+                    description__contains=description,
+                    group_id=id)
+            else:
+                roles = Role.objects.filter(description__contains=description)
+            ans = []
+            for role in roles:
+                if(name in role.group.name):
+                    ans.append(role)
+            roleList = []
+            for item in ans:
+                roleDict = dict()
+                roleDict['id_role'] = item.group.id
+                roleDict['name'] = item.group.name
+                roleDict['description'] = item.description
+                roleDict['role_number'] = item.group.user_set.count()
+                roleList.append(roleDict)
+            if(roleList.__len__() <= items * (page - 1)):
+                roleList = []
+            else:
+                start = items * (page - 1)
+                roleList = roleList[start:start + items]
+            response_object['roles'] = roleList
+            return self.success(response_object)
         except Exception as exception:
             return self.error(err=exception.args)
