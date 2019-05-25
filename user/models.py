@@ -13,6 +13,10 @@ class UserStatus(models.Model):
         return 1
 
 
+class Permission(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+
+
 class Gender(models.Model):
     """性别"""
 
@@ -34,8 +38,10 @@ class User(AbstractUser):
     USERNAME_FIELD = 'id'
 
 
-class Role(Group):
+class Role(models.Model):
     description = models.CharField(max_length=200)
+    group = models.OneToOneField(Group, on_delete=models.CASCADE, primary_key=True, default="")
+    permission = models.ManyToManyField(Permission)
 
 
 class Student(models.Model):
