@@ -22,6 +22,28 @@ class GetRoleAPI(APIView):
             return self.error(err=exception.args)
 
 
+class DeleteRoleAPI(APIView):
+    response_class = JSONResponse
+
+    def post(self, request):
+        response_object = dict()
+        try:
+            id = int(request.data.get('id'))
+        except Exception as exception:
+            msg = "id:%s\n" % (request.data.get('id'))
+            return self.error(err=[400, msg])
+        try:
+            role = Role.objects.get(group_id=id)
+            group = Group.objects.get(id=role.group_id)
+            group.delete()
+            role.delete()
+            response_object["state_code"] = 0
+            return self.success(response_object)
+        except Exception as exception:
+            response_object["state_code"] = -1
+            return self.error(err=exception.args, msg=response_object)
+
+
 class CreateRoleAPI(APIView):
     response_class = JSONResponse
 
@@ -53,7 +75,6 @@ class CreateRoleAPI(APIView):
 
 class GetRoleListAPI(APIView):
     response_class = JSONResponse
-    # get方法，参数用params放在url后面
 
     def post(self, request):
         response_object = dict()
