@@ -1,8 +1,30 @@
 from course.models import CourseResource
 from utils.api import APIView, JSONResponse, FILEResponse
 from ..serializers import LabSerializers, GetLabSerializer
-
 from ..models import Lab
+
+
+class CreateLabAPI(APIView):
+    response_class = JSONResponse
+    def post(self, request):
+        response_object = dict()
+        # get information from frontend
+        try:
+            course_id = int(request.POST.get('course_id'))
+            name = request.POST.get('name')
+            description = request.POST.get('description')
+
+        except Exception as exception:
+            return self.error(err=exception.args, msg="course_id:%s, name:%s, description:%s\n"%(request.POST.get('course_id'), request.POST.get('name'), request.POST.get('description')))
+        try:
+            # insert new lab course into database
+            course = Lab.objects.get(id=course_id)
+            lecture = Lab.objects.create(course=course, name=name, description=description)
+            response_object['lecture_id'] = lecture.id
+            return self.success(response_object)
+        except Exception as exception:
+            return self.error(err=exception, msg=str(exception))
+
 
 class GetLabsAPI(APIView):
     response_class = JSONResponse
