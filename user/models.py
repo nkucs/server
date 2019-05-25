@@ -1,6 +1,6 @@
 from django.db import models
 from oj import settings
-from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.contrib.auth.models import AbstractUser, Group
 
 
 class UserStatus(models.Model):
@@ -32,6 +32,10 @@ class User(AbstractUser):
     gender = models.ForeignKey(Gender, default=Gender.default, on_delete=models.SET_DEFAULT)
 
     USERNAME_FIELD = 'id'
+
+
+class Group(Group):
+    description = models.CharField(max_length=200)
 
 
 class Student(models.Model):
