@@ -48,7 +48,7 @@ class CreateRoleAPI(APIView):
     response_class = JSONResponse
 
     def post(self, request):
-        # get information from frontend
+        response_object = dict()
         try:
             name = request.data.get('name')
             description = request.data.get('description')
@@ -68,9 +68,11 @@ class CreateRoleAPI(APIView):
             role = Role.objects.create(group=group, description=description)
             for per in permission:
                 role.permission.add(Permission.objects.get(id=per))
-            return self.success(RoleSerializers(role).data)
+            response_object["state_code"] = 0
+            return self.success(response_object)
         except Exception as exception:
-            return self.error(err=exception.args)
+            response_object["state_code"] = -1
+            return self.error(err=exception.args, msg=response_object)
 
 
 class GetRoleListAPI(APIView):
@@ -117,3 +119,37 @@ class GetRoleListAPI(APIView):
             return self.success(response_object)
         except Exception as exception:
             return self.error(err=exception.args)
+
+
+class ModifyRoleAPI(APIView):
+    response_class = JSONResponse
+
+    def post(self, request):
+        response_object = dict()
+        try:
+            id = request.data.get('id_role')
+            name = request.data.get('name')
+            description = request.data.get('description')
+            permission = request.data.get('permission')
+            if(name is None or description is None or permission is None):
+                raise Exception()
+        except Exception as exception:
+            msg = "name:%s, description:%s\n" % (
+                request.data.get('name'),
+                request.data.get('description'),
+                request.data.get('permission'))
+            return self.error(err=[400, msg])
+        try:
+            # update role
+            Group.objects.filter(id=id).update(name=name)
+            Role.objects.filter(group_id=id).update(
+                description=description)
+            role = Role.objects.get(group_id=id)
+            role.permission.clear()
+            for per in permission:
+                role.permission.add(Permission.objects.get(id=per))
+            response_object["state_code"] = 0
+            return self.success(response_object)
+        except Exception as exception:
+            response_object["state_code"] = -1
+            return self.error(err=exception.args, msg=response_object)
