@@ -34,7 +34,7 @@ class User(AbstractUser):
     USERNAME_FIELD = 'id'
 
 
-class Group(Group):
+class Role(Group):
     description = models.CharField(max_length=200)
 
 
