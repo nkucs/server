@@ -1,3 +1,4 @@
+import math
 from django.contrib.auth.models import Group
 from utils.api import APIView, JSONResponse
 from ..serializers import RoleSerializers
@@ -103,6 +104,7 @@ class GetRoleListAPI(APIView):
                 if(name in role.group.name):
                     ans.append(role)
             roleList = []
+            pages = math.ceil(ans.__len__() / items)
             for item in ans:
                 roleDict = dict()
                 roleDict['id_role'] = item.group.id
@@ -115,6 +117,8 @@ class GetRoleListAPI(APIView):
             else:
                 start = items * (page - 1)
                 roleList = roleList[start:start + items]
+            response_object['current_page'] = page
+            response_object['total_pages'] = pages
             response_object['roles'] = roleList
             return self.success(response_object)
         except Exception as exception:
