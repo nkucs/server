@@ -23,6 +23,16 @@ class GetLectureFileSerializer(serializers.ModelSerializer):
         model = CourseResource
         fields = ('id', 'name')
 
+class GetLectureProblemSerializer(serializers.ModelSerializer):
+    """
+    Serialize 'problems' attribute of a Lecture object.
+    API: get-lecture
+    """
+
+    class Meta:
+        model = Problem
+        fields = ('id', 'name')
+
 class GetLectureSerializer(serializers.ModelSerializer):
     """
     Serialize a Lecture object.
@@ -30,11 +40,15 @@ class GetLectureSerializer(serializers.ModelSerializer):
     """
 
     files = serializers.SerializerMethodField()
+    problems = serializers.SerializerMethodField()
 
     class Meta:
         model = Lecture
-        fields = ('name', 'description', 'files')
+        fields = ('name', 'description', 'files', 'problems')
 
     def get_files(self, obj):
         return GetLectureFileSerializer(obj.resources, many=True).data
+    
+    def get_problems(self, obj):
+        return GetLectureProblemSerializer(obj.resources, many=True).data
 
