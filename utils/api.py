@@ -1,13 +1,11 @@
-import functools
 import json
 import logging
 from collections import OrderedDict
 
 from django.core.files import File
 from django.http import HttpResponse, QueryDict, FileResponse
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
-from django.views.generic import View
+from rest_framework.response import Response
+from rest_framework.views import APIView as RestfulAPIView
 
 logger = logging.getLogger("")
 
@@ -63,7 +61,7 @@ class FILEResponse(object):
         return resp
 
 
-class APIView(View):
+class APIView(RestfulAPIView):
     """
     Django view的父类, 和django-rest-framework的用法基本一致
      - request.data获取解析之后的json或者urlencoded数据, dict类型
@@ -72,95 +70,11 @@ class APIView(View):
      - self.response 返回一个django HttpResponse, 具体在self.response_class中实现
      - parse请求的类需要定义在request_parser中, 目前只支持json和urlencoded的类型, 用来解析请求的数据
     """
-    request_parsers = (JSONParser, URLEncodedParser)
-    response_class = JSONResponse
 
-    def _get_request_data(self, request):
-        if request.method not in ["GET", "DELETE"]:
-            body = request.body
-            content_type = request.META.get("CONTENT_TYPE")
-            if not content_type:
-                raise ValueError("content_type is required")
-            for parser in self.request_parsers:
-                if content_type.startswith(parser.content_type):
-                    break
-            # else means the for loop is not interrupted by break
-            else:
-                raise ValueError("unknown content_type '%s'" % content_type)
-            if body:
-                return parser.parse(body)
-            return {}
-        return request.GET
+    @staticmethod
+    def success(data=None):
+        return Response({"error": None, "data": data})
 
-    def response(self, data):
-        return self.response_class.response(data)
-
-    def success(self, data=None):
-        return self.response({"error": None, "data": data})
-
-    def error(self, msg="error", err="error"):
-        return self.response({"error": err, "data": msg})
-
-    def _serializer_error_to_str(self, errors):
-        for k, v in errors.items():
-            if isinstance(v, list):
-                return k, v[0]
-            elif isinstance(v, OrderedDict):
-                for _k, _v in v.items():
-                    return self._serializer_error_to_str({_k: _v})
-
-    def invalid_serializer(self, serializer):
-        k, v = self._serializer_error_to_str(serializer.errors)
-        if k != "non_field_errors":
-            return self.error(err="invalid-" + k, msg=k + ": " + v)
-        else:
-            return self.error(err="invalid-field", msg=v)
-
-    def server_error(self):
-        return self.error(err="server-error", msg="server error")
-
-    def paginate_data(self, request, query_set, object_serializer=None):
-        """
-        :param request: django的request
-        :param query_set: django model的query set或者其他list like objects
-        :param object_serializer: 用来序列化query set, 如果为None, 则直接对query set切片
-        :return:
-        """
-        try:
-            limit = int(request.GET.get("limit", "10"))
-        except ValueError:
-            limit = 10
-        if limit < 0 or limit > 250:
-            limit = 10
-        try:
-            offset = int(request.GET.get("offset", "0"))
-        except ValueError:
-            offset = 0
-        if offset < 0:
-            offset = 0
-        results = query_set[offset:offset + limit]
-        if object_serializer:
-            count = query_set.count()
-            results = object_serializer(results, many=True).data
-        else:
-            count = query_set.count()
-        data = {"results": results,
-                "total": count}
-        return data
-
-    def dispatch(self, request, *args, **kwargs):
-        if self.request_parsers:
-            try:
-                request.data = self._get_request_data(self.request)
-            except ValueError as e:
-                return self.error(err="invalid-request", msg=str(e))
-        try:
-            return super(APIView, self).dispatch(request, *args, **kwargs)
-        except APIError as e:
-            ret = {"msg": e.msg}
-            if e.err:
-                ret["err"] = e.err
-            return self.error(**ret)
-        except Exception as e:
-            logger.exception(e)
-            return self.server_error()
+    @staticmethod
+    def error(msg="error", err="error"):
+        return Response({"error": err, "data": msg})
