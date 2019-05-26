@@ -1,9 +1,10 @@
 from utils.api import APIView, JSONResponse
-from lecture.models import Lecture
+from lecture.models import Lecture, LectureProblem
 from django.db import models
 from course.models import Course
 from lecture.serializers import LectureSerializers
 from ..serializers import LectureSerializers, GetLectureSerializer
+from problem.models import Problem
 
 class CreateLectureAPI(APIView):
     response_class = JSONResponse
@@ -64,3 +65,28 @@ class GetLectureAPI(APIView):
         except Exception as e:
             # not found
             return self.error(msg=str(e), err=e.args)
+
+class EditProblems(APIView):
+    response_class = JSONResponse
+    def post(self, request):
+        response_object = dict()
+        # get information from frontend
+        try:
+            lecture_id = int(request.POST.get('lecture_id'))
+            problem_ids = request.POST.get('problem_ids')
+        except Exception as exception:
+            return self.error(err=exception.args, msg="lecture_id:%s, problem_ids:%s\n"%(request.POST.get('lecture_id'), request.POST.get('problem_ids')))
+        try:
+            # insert new problems into database
+            lecture = Lecture.objects.get(id=lecture_id)
+            for i in problem_ids:
+                problem = Problem.objects.get(id=i.problem_id)
+                lecture.problems.add(problem)
+                lp = LectureProblem(lecture=lecture, problem=problem)
+                lp.save()
+            
+            response_object['lecture_id'] = lecture.id
+            response_object['problem_ids'] = lecture.problems
+            return self.success(response_object)
+        except Exception as exception:
+            return self.error(err=exception, msg=str(exception))
