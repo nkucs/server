@@ -12,13 +12,15 @@ class GetRoleAPI(APIView):
     def get(self, request):
         # get information from frontend
         try:
-            id = int(request.data.get('id_role'))
+            id = int(request.GET.get('id_role'))
         except Exception as exception:
-            msg = "id_role:%s\n" % (request.data.get('id_role'))
+            msg = "id_role:%s\n" % (request.GET.get('id_role'))
             return self.error(err=[400, msg])
         try:
             role = Role.objects.get(group_id=id)
-            return self.success(RoleSerializers(role).data)
+            ansDict = RoleSerializers(role).data
+            ansDict['name'] = role.group.name
+            return self.success(ansDict)
         except Exception as exception:
             return self.error(err=exception.args)
 
