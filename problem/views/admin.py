@@ -108,3 +108,30 @@ class EditProblemAPI(APIView):
             return self.success(response_object)
         except Exception as exception:
             return self.error(err=exception, msg=str(exception))
+    
+
+
+class DeleteProblemAPI(APIView):
+    def post(self, request):
+        try:
+            problem_id = int(request.POST.get('problem_id'))
+            Problem.objects.get(id=problem_id).delete()
+        except Exception as exception:
+            return self.error(err=exception.args, msg="problem_id: %s"%(request.POST.get('problem_id')))
+        else:
+            return self.success({'msg': 'success'})
+
+
+class AddTagAPI(APIView):
+    def post(self,request):
+        response_object = dict()
+        try:
+            # get tag name
+            name = request.POST.get('tag_name')
+            # add tag to Tag table
+            tag = Tag.objects.create(name=name)
+            response_object['tag_id'] = tag.id
+        except Exception as exception:
+            return self.error(err=exception.args,msg="tag_name:%s"(request.POST.get('tag_name')))
+        else:
+            return self.success(response_object)
