@@ -13,13 +13,37 @@ class CreateLabAPI(APIView):
             course_id = int(request.POST.get('course_id'))
             name = request.POST.get('name')
             description = request.POST.get('description')
+            start_time = request.POST.get('start_time')
+            end_time = request.POST.get('end_time')
 
         except Exception as exception:
-            return self.error(err=exception.args, msg="course_id:%s, name:%s, description:%s\n"%(request.POST.get('course_id'), request.POST.get('name'), request.POST.get('description')))
+            return self.error(err=exception.args, msg="course_id:%s, name:%s, description:%s\n"%
+                (request.POST.get('course_id'), request.POST.get('name'), request.POST.get('description')))
         try:
             # insert new lab course into database
             course = Lab.objects.get(id=course_id)
             lecture = Lab.objects.create(course=course, name=name, description=description)
+            response_object['lecture_id'] = lecture.id
+            return self.success(response_object)
+        except Exception as exception:
+            return self.error(err=exception, msg=str(exception))
+
+class EditLabAPI(APIView):
+    response_class = JSONResponse
+    def post(self, request):
+        response_object = dict()
+        #get information from frontend
+        try:
+            lab_id = int(request.POST.get('lab_id'))
+            name = request.POST.get('name')
+            description = request.POST.get('description')
+
+        except Exception as exception:
+            return self.error(err=exception.args, msg="lab_id:%s, name:%s, description:%s\n"%
+                (request.POST.get('lab_id'), request.POST.get('name'), request.POST.get('description')))
+        try:
+            lab = Lab.objects.get(id=lab_id)
+            lecture = Lab.objects.create(lab=lab, name=name, description=description)
             response_object['lecture_id'] = lecture.id
             return self.success(response_object)
         except Exception as exception:
