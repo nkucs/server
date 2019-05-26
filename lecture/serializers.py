@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import Lecture
 from course.models import CourseResource
+from problem.models import Problem
 
 
 class LectureSerializers(serializers.ModelSerializer):
