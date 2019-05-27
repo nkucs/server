@@ -2,9 +2,6 @@ import math
 from django.contrib import auth
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import Group
-from django.contrib.auth.models import AnonymousUser
-from django.contrib.sessions.backends.db import SessionStore
-from django.contrib.sessions.models import Session
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from rest_framework.permissions import IsAuthenticated
 from utils.api import APIView, JSONResponse
@@ -165,13 +162,6 @@ class ModifyRoleAPI(APIView):
             response_object["state_code"] = -1
             return self.error(err=exception.args, msg=response_object)
 
-def checkUserType(user):
-    validType = ['stud', 'admi', 'teac']
-    if user in validType:
-        return True
-    else:
-        return False
-
 class UserAuthAPI(APIView):
     authentication_classes = (SessionAuthentication, BasicAuthentication)
     # permission_classes = (IsAuthenticated,)
@@ -221,5 +211,3 @@ class UserAuthAPI(APIView):
         response_object["auth_method"] = "password"
         auth.login(request, user)
         return self.success(response_object)
-
-

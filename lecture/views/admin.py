@@ -5,6 +5,7 @@ from course.models import Course
 from lecture.serializers import LectureSerializers
 from ..serializers import LectureSerializers, GetLectureSerializer
 from problem.models import Problem
+from user.views.decorators import login_required, teach_required
 
 class CreateLectureAPI(APIView):
     response_class = JSONResponse
@@ -27,6 +28,7 @@ class CreateLectureAPI(APIView):
             return self.error(err=exception, msg=str(exception))
 
 
+@teach_required
 class GetMyLecturesAPI(APIView):
     response_class = JSONResponse
     def get(self, request):
