@@ -1,8 +1,15 @@
 import math
+from django.contrib import auth
+from django.contrib.auth import authenticate
 from django.contrib.auth.models import Group
+from django.contrib.auth.models import AnonymousUser
+from django.contrib.sessions.backends.db import SessionStore
+from django.contrib.sessions.models import Session
+from rest_framework.authentication import SessionAuthentication, BasicAuthentication
+from rest_framework.permissions import IsAuthenticated
 from utils.api import APIView, JSONResponse
 from ..serializers import RoleSerializers
-from ..models import Role, Permission
+from ..models import Role, Permission, User, Student, Teacher, Admin
 
 
 class GetRoleAPI(APIView):
@@ -157,3 +164,62 @@ class ModifyRoleAPI(APIView):
         except Exception as exception:
             response_object["state_code"] = -1
             return self.error(err=exception.args, msg=response_object)
+
+def checkUserType(user):
+    validType = ['stud', 'admi', 'teac']
+    if user in validType:
+        return True
+    else:
+        return False
+
+class UserAuthAPI(APIView):
+    authentication_classes = (SessionAuthentication, BasicAuthentication)
+    # permission_classes = (IsAuthenticated,)
+    response_class = JSONResponse
+
+    def post(self, request, usertype):
+        # 在logout时一定要把is_login设置为False
+        try:
+            validType = ['stud', 'admi', 'teac']
+            if usertype in validType:
+                response_object = dict()
+                data = request.data
+                username = data["username"]
+                password = data["password"]
+                remember = data["rememberMe"]
+        except Exception as exception:
+            msg = "Illegal login request."
+            return self.error(err=exception.args, msg=msg)
+        try:
+            user = authenticate(username=username, password=password)
+        except Exception as exception:
+            response_object["state_code"] = -1
+            return self.error(err=exception.args, msg=response_object)      
+        try:
+            user_id = user.id
+            if usertype == 'stud':
+                user = Student.objects.get(user_id=user_id)
+            elif usertype == 'teac':
+                user = Teacher.objects.get(user_id=user_id)
+            else:
+                user = Admin.objects.get(user_id=user_id)
+            if user is None:
+                raise Exception()
+        except Exception as exception:
+            response_object["state_code"] = -1
+            return self.error(err=exception.args, msg=response_object)
+        if not remember:
+            request.session.flush()
+        else:
+            request.session["userID"] = user.id
+            request.session["is_login"] = True
+            request.session.create()
+            sessionID = request.session.session_key
+            response_object["sessionID"] = sessionID
+        response_object["userID"] = user.id
+        response_object["state_code"] = 0
+        response_object["auth_method"] = "password"
+        auth.login(request, user)
+        return self.success(response_object)
+
+
