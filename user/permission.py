@@ -1,11 +1,10 @@
 from rest_framework.permissions import BasePermission
 from django.contrib.auth.models import Group
-from .models import User, Permission
+from .models import Permission
 
 
-def getPermission(index):
-    # user = User.objects.create_user(username='用户名',password='密码',email='邮箱')
-    user = User.objects.get(id=4)
+def getPermission(request, index):
+    user = request.user
     groups = Group.objects.filter(user=user)
     permissionNeeded = Permission.objects.get(id=index)
     for group in groups:
@@ -22,7 +21,7 @@ class ManageTeacherPermission(BasePermission):
     """
 
     def has_permission(self, request, view):
-        if(getPermission(1)):
+        if(getPermission(request, 1)):
             return True
         return False
 
@@ -33,7 +32,7 @@ class ManageStudentPermission(BasePermission):
     """
 
     def has_permission(self, request, view):
-        if(getPermission(2)):
+        if(getPermission(request, 2)):
             return True
         return False
 
@@ -44,7 +43,7 @@ class ManageCoursePermission(BasePermission):
     """
 
     def has_permission(self, request, view):
-        if(getPermission(3)):
+        if(getPermission(request, 3)):
             return True
         return False
 
@@ -55,7 +54,7 @@ class ManageClassPermission(BasePermission):
     """
 
     def has_permission(self, request, view):
-        if(getPermission(4)):
+        if(getPermission(request, 4)):
             return True
         return False
 
@@ -66,7 +65,7 @@ class ManageExamPermission(BasePermission):
     """
 
     def has_permission(self, request, view):
-        if(getPermission(5)):
+        if(getPermission(request, 5)):
             return True
         return False
 
@@ -77,7 +76,7 @@ class ManageExamCodePermission(BasePermission):
     """
 
     def has_permission(self, request, view):
-        if(getPermission(6)):
+        if(getPermission(request, 6)):
             return True
         return False
 
@@ -88,7 +87,7 @@ class ManageMessagePermission(BasePermission):
     """
 
     def has_permission(self, request, view):
-        if(getPermission(7)):
+        if(getPermission(request, 7)):
             return True
         return False
 
@@ -99,7 +98,7 @@ class ManageProgrammingTopicPermission(BasePermission):
     """
 
     def has_permission(self, request, view):
-        if(getPermission(8)):
+        if(getPermission(request, 8)):
             return True
         return False
 
@@ -110,7 +109,7 @@ class ManageLabelPermission(BasePermission):
     """
 
     def has_permission(self, request, view):
-        if(getPermission(9)):
+        if(getPermission(request, 9)):
             return True
         return False
 
@@ -121,7 +120,7 @@ class ManageReportTopicPermission(BasePermission):
     """
 
     def has_permission(self, request, view):
-        if(getPermission(10)):
+        if(getPermission(request, 10)):
             return True
         return False
 
@@ -132,7 +131,7 @@ class ManageCourseResourcesPermission(BasePermission):
     """
 
     def has_permission(self, request, view):
-        if(getPermission(11)):
+        if(getPermission(request, 11)):
             return True
         return False
 
@@ -143,7 +142,7 @@ class ManageExperimentPermission(BasePermission):
     """
 
     def has_permission(self, request, view):
-        if(getPermission(12)):
+        if(getPermission(request, 12)):
             return True
         return False
 
@@ -154,7 +153,7 @@ class ManageAccessPermission(BasePermission):
     """
 
     def has_permission(self, request, view):
-        if(getPermission(13)):
+        if(getPermission(request, 13)):
             return True
         return False
 
@@ -165,6 +164,6 @@ class ManageRolePermission(BasePermission):
     """
 
     def has_permission(self, request, view):
-        if(getPermission(14)):
+        if(getPermission(request, 14)):
             return True
         return False
