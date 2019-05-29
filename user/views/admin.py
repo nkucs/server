@@ -213,7 +213,22 @@ class GetRoleTeacherListAPI(APIView):
 
 
 class GetRoleAddTeacherListAPI(APIView):
-    pass
+
+    def get(self, request):
+        role_id = int(request.GET.get('id', 0))
+        page = int(request.GET.get('page', 1))
+        page_size = int(request.GET.get('page_size', 10))
+
+        try:
+            group = Group.objects.get(id=role_id)
+        except Model.DoesNotExist:
+            return self.error(err=404, msg='Role does not exist.')
+
+        users = User.objects.exclude(groups=group)
+        users = users.filter(teacher__isnull=False)
+        paginator = Paginator(users, TeacherSerializer, page, page_size)
+
+        return self.success(data=paginator.get_response())
 
 
 class RoleTeacherAPI(APIView):
