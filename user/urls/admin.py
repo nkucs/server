@@ -1,5 +1,5 @@
 from django.conf.urls import url
-from user.views.admin import CreateRoleAPI, GetRoleAPI
+from user.views.admin import CreateRoleAPI, GetRoleAPI, GetRoleTeacherListAPI, GetRoleAddTeacherListAPI, RoleTeacherAPI
 from user.views.admin import GetRoleListAPI, DeleteRoleAPI, ModifyRoleAPI
 
 urlpatterns = [
@@ -8,4 +8,8 @@ urlpatterns = [
     url(r'role_detail?$', GetRoleAPI.as_view(), name="get_role"),
     url(r'role_list?$', GetRoleListAPI.as_view(), name="get_role_list"),
     url(r'role_delete?$', DeleteRoleAPI.as_view(), name="delete_role"),
+
+    url(r'role-teacher-list/?$', GetRoleTeacherListAPI.as_view(), name="role-teacher-list"),
+    url(r'role-add-teacher-list/?$', GetRoleAddTeacherListAPI.as_view(), name="role-add-teacher-list"),
+    url(r'role-teacher/?$', RoleTeacherAPI.as_view(), name="role-teacher"),
 ]
