@@ -4,7 +4,7 @@ from ..serializers import ProblemSubmissionSerializers1
 from django.http import HttpResponse, JsonResponse
 from ..models import ProblemSubmission
 
-class GetALLSubmissionAPI(APIView):
+class GetAllSubmissionAPI(APIView):
     def get(self, request):
         submission_student_id = int(request.GET.get('submission_student_id'))
         # query from database for submissions of student
