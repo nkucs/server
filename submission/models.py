@@ -5,6 +5,16 @@ from problem.models import Problem, Case
 from user.models import Student
 
 
+class CaseStatus(models.Model):
+    """测试案例通过情况"""
+
+    name = models.CharField(max_length=20)
+
+    @staticmethod
+    def default():
+        return 1
+
+
 class ProblemSubmission(models.Model):
     """编程题提交记录"""
 
@@ -20,15 +30,6 @@ class ProblemSubmission(models.Model):
     cases = models.ManyToManyField(Case, blank=True, related_name='problem_submissions',
                                    through='ProblemSubmissionCase')
     lectures = models.ManyToManyField(Lecture, blank=True, related_name='problem_submissions')
-
-class CaseStatus(models.Model):
-    """测试案例通过情况"""
-
-    name = models.CharField(max_length=20)
-
-    @staticmethod
-    def default():
-        return 1
 
 
 class ProblemSubmissionCase(models.Model):
