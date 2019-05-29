@@ -1,8 +1,10 @@
 import math
 from django.contrib.auth.models import Group
+from django.db.models import Model
+
 from utils.api import APIView, JSONResponse
-from ..serializers import RoleSerializers
-from ..models import Role, Permission
+from ..serializers import RoleSerializers, TeacherSerializer
+from ..models import Role, Permission, User
 
 
 class GetRoleAPI(APIView):
@@ -159,3 +161,30 @@ class ModifyRoleAPI(APIView):
         except Exception as exception:
             response_object["state_code"] = -1
             return self.error(err=exception.args, msg=response_object)
+
+
+class GetRoleTeacherListAPI(APIView):
+
+    def get(self, request):
+        role_id = int(request.GET.get('id', 0))
+
+        try:
+            group = Group.objects.get(id=role_id)
+        except Model.DoesNotExist:
+            return self.error(err=404, msg='Role does not exist.')
+
+        users = group.user_set.all()
+        response = []
+        for user in users:
+            response.append(TeacherSerializer(user).data)
+        return self.success(data=response)
+
+
+class GetRoleAddTeacherListAPI(APIView):
+    pass
+
+
+class RoleTeacherAPI(APIView):
+    pass
+
+
