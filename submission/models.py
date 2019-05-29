@@ -16,6 +16,7 @@ class ProblemSubmission(models.Model):
     memory = models.BigIntegerField()
     IP = models.CharField(max_length=20)
     language = models.IntegerField()
+    submission_status = models.ForeignKey(CaseStatus, default=CaseStatus.default, on_delete=models.SET_DEFAULT)
     cases = models.ManyToManyField(Case, blank=True, related_name='problem_submissions',
                                    through='ProblemSubmissionCase')
     lectures = models.ManyToManyField(Lecture, blank=True, related_name='problem_submissions')
