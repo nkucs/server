@@ -165,6 +165,7 @@ class ModifyRoleAPI(APIView):
 
 
 class Paginator:
+    """分页器"""
 
     def __init__(self, obj_set, serializer, page, page_size):
         self.__obj_set = obj_set
@@ -182,7 +183,7 @@ class Paginator:
             self.__page = 1
         offset = (self.__page - 1) * self.__page_size
         objs = self.__obj_set.all()[
-                offset:offset + self.__page_size if offset + self.__page_size <= objects_count else objects_count]
+               offset:offset + self.__page_size if offset + self.__page_size <= objects_count else objects_count]
 
         response = {
             'page': self.__page,
@@ -197,6 +198,7 @@ class Paginator:
 
 
 class GetRoleTeacherListAPI(APIView):
+    """获取某角色下教师列表"""
 
     def get(self, request):
         role_id = int(request.GET.get('id', 0))
@@ -213,6 +215,7 @@ class GetRoleTeacherListAPI(APIView):
 
 
 class GetRoleAddTeacherListAPI(APIView):
+    """获取某角色可添加的教师列表"""
 
     def get(self, request):
         role_id = int(request.GET.get('id', 0))
@@ -232,4 +235,42 @@ class GetRoleAddTeacherListAPI(APIView):
 
 
 class RoleTeacherAPI(APIView):
-    pass
+    """分配角色或删除分配"""
+
+    def post(self, request):
+        distributions = request.data.get('distribution', [])
+
+        for distribution in distributions:
+            user_id = distribution['id_user']
+            role_id = distribution['id_role']
+
+            try:
+                user = User.objects.get(id=user_id)
+                group = Group.objects.get(id=role_id)
+            except User.DoesNotExist:
+                return self.error(err=404, msg='User ' + str(user_id) + ' does not exist.')
+            except Group.DoesNotExist:
+                return self.error(err=404, msg='Role ' + str(role_id) + ' does not exist.')
+
+            group.user_set.add(user)
+
+        return self.success({'state_code': 0})
+
+    def delete(self, request):
+        remove_list = request.data.get('distribution', [])
+
+        for remove_item in remove_list:
+            user_id = remove_item['id_user']
+            role_id = remove_item['id_role']
+
+            try:
+                user = User.objects.get(id=user_id)
+                group = Group.objects.get(id=role_id)
+            except User.DoesNotExist:
+                return self.error(err=404, msg='User ' + str(user_id) + ' does not exist.')
+            except Group.DoesNotExist:
+                return self.error(err=404, msg='Role ' + str(role_id) + ' does not exist.')
+
+            group.user_set.remove(user)
+
+        return self.success({'state_code': 0})
