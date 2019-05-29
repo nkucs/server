@@ -22,4 +22,5 @@ urlpatterns = [
     url(r"^teacher/lecture/", include("lecture.urls.admin")),
     url(r"^administrator/role/", include("user.urls.admin")),
     url(r"^exam/student", include("exam.urls.admin")),
+    url(r"^course/", include("course.urls.admin")),
 ]
