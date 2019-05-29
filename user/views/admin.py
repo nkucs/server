@@ -204,13 +204,24 @@ class GetRoleTeacherListAPI(APIView):
         role_id = int(request.GET.get('id', 0))
         page = int(request.GET.get('page', 1))
         page_size = int(request.GET.get('page_size', 10))
+        name_filter = request.GET.get('name', '')
+        user_id_filter = int(request.GET.get('user_id', 0))
+        teacher_number_filter = request.GET.get('teacher_number', '')
 
         try:
             group = Group.objects.get(id=role_id)
         except Group.DoesNotExist:
             return self.error(err=404, msg='Role does not exist.')
 
-        paginator = Paginator(group.user_set, TeacherSerializer, page, page_size)
+        users = group.user_set
+        if name_filter != '':
+            users = users.filter(name__contains=name_filter)
+        if user_id_filter != 0:
+            users = users.filter(id=user_id_filter)
+        if teacher_number_filter != '':
+            users = users.filter(teacher__teacher_number__startswith=teacher_number_filter)
+
+        paginator = Paginator(users, TeacherSerializer, page, page_size)
         return self.success(data=paginator.get_response())
 
 
@@ -221,6 +232,9 @@ class GetRoleAddTeacherListAPI(APIView):
         role_id = int(request.GET.get('id', 0))
         page = int(request.GET.get('page', 1))
         page_size = int(request.GET.get('page_size', 10))
+        name_filter = request.GET.get('name', '')
+        user_id_filter = int(request.GET.get('user_id', 0))
+        teacher_number_filter = request.GET.get('teacher_number', '')
 
         try:
             group = Group.objects.get(id=role_id)
@@ -229,6 +243,13 @@ class GetRoleAddTeacherListAPI(APIView):
 
         users = User.objects.exclude(groups=group)
         users = users.filter(teacher__isnull=False)
+        if name_filter != '':
+            users = users.filter(name__contains=name_filter)
+        if user_id_filter != 0:
+            users = users.filter(id=user_id_filter)
+        if teacher_number_filter != '':
+            users = users.filter(teacher__teacher_number__startswith=teacher_number_filter)
+
         paginator = Paginator(users, TeacherSerializer, page, page_size)
 
         return self.success(data=paginator.get_response())
