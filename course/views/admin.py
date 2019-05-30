@@ -3,6 +3,7 @@ from django.http import HttpResponse, JsonResponse
 from django.db import models
 from user.models import Teacher, User
 from course.models import CourseTeacher, Course
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 
 def get_course_info(course):
     course_info = dict()
@@ -39,6 +40,7 @@ def get_course_all():
         course_list.add(course)
     return course_list
 
+
 class GetAllCourseAPI(APIView):
     response_class = JSONResponse
     def post(self, request):
@@ -49,12 +51,13 @@ class GetAllCourseAPI(APIView):
         name = request.GET.get('name')
         try:
             courses = get_course_all()
-            if teacher != '':
+            if teacher != None:
                 course_list_by_teacher = select_course_by_teacher(teacher)
                 courses = courses.intersection(course_list_by_teacher)
-            if name != '':
+            if name != None:
                 course_list_by_name = select_course_by_name(name)
                 courses = courses.intersection(course_list_by_name)
+            courses = list(courses)
             paginator = Paginator(courses, page_length)
             try:
                 courses = paginator.page(page)
@@ -73,6 +76,7 @@ class GetAllCourseAPI(APIView):
             return self.success(response)
         except Exception as e:
             return self.error(msg=str(e), err=e.args)
+
 
 class GetMyCourseAPI(APIView):
     response_class = JSONResponse
@@ -105,6 +109,7 @@ class GetMyCourseAPI(APIView):
             return self.success(response)
         except Exception as e:
             return self.error(msg=str(e), err=e.args)
+
 
 class DeleteCourseAPI(APIView):
     response_class = JSONResponse
@@ -140,3 +145,41 @@ class DuplicateCourseAPI(APIView):
                 return self.success(new_course_code)
             except Exception as e:
                 return self.error(msg=str(e), err=e.args)
+
+
+class AddCourseAPI(APIView):
+    response_class = JSONResponse
+    def post(self, request):
+        try:
+            name = request.POST.get('name')
+            start_time = request.POST.get('startTime')
+            end_time = request.POST.get('endTime')
+            description = request.POST.get('description')
+            course = Course.objects.create(
+                name = name,
+                start_time = start_time,
+                end_time = end_time,
+                description = description,
+            )
+            course.save()
+            return self.success(0)
+        except Exception as exception:
+            return self.error(err=exception.args, msg=str(exception))
+
+
+class UpdateAPI(APIView):
+    response_class = JSONResponse
+    def post(self, request):
+        try:
+            teacher_number = request.POST.get('teacherNumber')
+            course_code = request.POST.get('courseCode')
+            name = request.POST.get('name')
+            start_time = request.POST.get('startTime')
+            end_time = request.POST.get('endTime')
+            description = request.POST.get('description')
+            teacher = Teacher.objects.filter(teacher_number=teacher_number)
+            course = Course.objects.filter(code=course_code).update(name=name, start_time=start_time, end_time=end_time, description=description)
+            return self.success(0)
+        except Exception as exception:
+            return self.error(err=exception.args, msg=str(exception))
+
