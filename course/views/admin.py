@@ -4,6 +4,8 @@ from django.db import models
 from user.models import Teacher, User
 from course.models import CourseTeacher, Course
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+import datetime
+
 
 def get_course_info(course):
     course_info = dict()
@@ -183,3 +185,33 @@ class UpdateAPI(APIView):
         except Exception as exception:
             return self.error(err=exception.args, msg=str(exception))
 
+class GetCourseDetailsAPI(APIView):
+    response_class = JSONResponse
+    def get(self, request):
+        teacher_number = request.GET.get('teacherNumber')
+        if not teacher_number:
+            #not found
+            return self.error(msg=f"teacher_number key is None", err=request.GET)
+        try:
+            teacher = Teacher.objects.get(teacher_number=teacher_number)
+            courses_teacher = CourseTeacher.objects.filter(teacher=teacher)
+            courses = []
+            cur_time = datetime.date.today()
+            for course_teacher in courses_teacher:
+                cur_course = course_teacher.course
+                s_time = cur_course.start_time
+                e_time = cur_course.end_time
+                if cur_time.le(e_time) and cur_time.ge(s_time): 
+                    courses.append(
+                        {
+                            'course_id' : cur_course.code,
+                            'name' : cur_course.name,
+                            'start_time' : cur_course.start_time,
+                            'end_time' : cur_course.end_time,
+                            'description' : cur_course.description
+                        }
+                    )
+            return self.success(JSONResponse(courses))
+        except Exception as e:
+            # not found
+            return self.error(msg=str(e), err=e.args)
