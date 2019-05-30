@@ -17,3 +17,4 @@ class GetProblemAPI(APIView):
             return HttpResponse(status=404)
         serializer = GetProblemSerializer(problem)
         return JsonResponse(serializer.data,status=status.HTTP_200_OK)
+    
