@@ -2,7 +2,7 @@ from utils.api import APIView
 from rest_framework import status
 from ..serializers import ProblemSubmissionSerializers1
 from django.http import HttpResponse, JsonResponse
-from ..models import ProblemSubmission
+from ..models import ProblemSubmission, LabSubmission, Attachment
 
 class GetAllSubmissionAPI(APIView):
     def get(self, request):
@@ -26,3 +26,25 @@ class GetUserSubmissionAPI(APIView):
             return HttpResponse(status=404)
         serializer = ProblemSubmissionSerializers1(ProblemSubmission)
         return JsonResponse(serializer.data,status=status.HTTP_200_OK)
+
+class AddLabAttachment(APIView):
+    # create submission of a lab
+    def post(self, request):
+        submission_student_id = int(request.GET.get('id_user'))
+        course_id = int(request.GET.get('id_course'))
+        lab_id = int(request.GET.get('id_lab'))
+        attachment_path = int(request.GET.get('file'))
+        # query from database for submissions of student and problem 
+        try:
+            labSubmission = LabSubmission.objects.filter(id_student=submission_student_id, id_lab=lab_id)
+        except ProblemSubmission.DoesNotExist:
+            return HttpResponse(status=404)
+        try:
+            attachment = Attachment.objects.create(
+                id_lab_submission = labSubmission.id,
+                path = attachment_path
+            )
+        except Exception as e:
+            return HttpResponse(status=-1)
+        return HttpResponse(status=0)
+
