@@ -9,6 +9,7 @@ class APISessionAuthMiddleware(MiddlewareMixin):
             session_id = request.COOKIES['sessionID']
             if session_id:
                 try:
+                    print('session_id:', session_id)
                     sess_dict = Session.objects.get(pk=session_id).get_decoded()
                     print(sess_dict)
                     user_id = sess_dict['user_id']

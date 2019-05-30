@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Lab
+from .models import Lab, LabProblem, LabSubmission
 from course.models import CourseResource
 
 
@@ -40,3 +40,55 @@ class GetLabSerializer(serializers.ModelSerializer):
 
     def get_files(self, obj):
         return GetLabFileSerializer(obj.resources, many=True).data
+
+
+class GetLabListSerializer(serializers.ModelSerializer):
+    """
+    Serializer a Lab object
+    API: student/lab_course_list
+    """
+    start_time = serializers.DateTimeField(format='%Y-%m-%d %H:%M:%S')
+    end_time = serializers.DateTimeField(format='%Y-%m-%d %H:%M:%S')
+
+    class Meta:
+        model = Lab
+        fields = ('name', 'start_time', 'end_time')
+
+
+class LabProblemSerializer(serializers.ModelSerializer):
+    """
+    Serializer a Lab Problem
+    API: student/lab_course_detail
+    """
+    name = serializers.SerializerMethodField('get_problem_name')
+    id_problem = serializers.SerializerMethodField('get_problem_id')
+    score = serializers.SerializerMethodField('get_problem_score')
+
+    def get_problem_id(self, obj):
+        return obj.id
+
+    def get_problem_score(self, obj):
+        lab = obj.lab
+        try:
+            grade = LabSubmission.objects.get(lab=lab).problem_grade
+        except:
+            grade = 0
+        return grade
+
+    def get_problem_name(self, obj):
+        return obj.problem.name
+
+    class Meta:
+        model = LabProblem
+        fields = ('name', 'score', 'id_problem')
+
+
+class GetLabDetailSerializer(serializers.ModelSerializer):
+    problem = LabProblemSerializer(many=True, read_only=True)
+    start_time = serializers.DateTimeField(format='%Y-%m-%d %H:%M:%S')
+    end_time = serializers.DateTimeField(format='%Y-%m-%d %H:%M:%S')
+
+    class Meta:
+        model = Lab
+        fields = ('name', 'description', 'start_time', 'end_time', \
+                  'report_required', 'problem_weight', 'attachment_weight', 'problem')

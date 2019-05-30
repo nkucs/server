@@ -128,3 +128,71 @@ class EditProblems(APIView):
             return self.success(response_object)
         except Exception as exception:
             return self.error(err=exception, msg=str(exception))
+
+class EditLectureAPI(APIView):
+    response_class = JSONResponse
+    def post(self, request):
+        response_object = dict()
+        # get information from frontend
+        try:
+            lecture_id = int(request.POST.get('lecture_id'))
+            name = request.POST.get('name')
+            description = request.POST.get('description')
+        except Exception as exception:
+            return self.error(err=exception.args, msg="lecture_id:%s\n" % (request.POST.get('lecture_id')))
+        try:
+            # update lecture
+            Lecture.objects.filter(id=lecture_id).update(name=name, description=description)
+
+            #successful return 
+            response_object["state_code"] = 200 
+            return self.success(response_object)
+        except Exception as exception:
+            return self.error(err=exception.args, msg=str(exception))
+
+class DeleteLectureAPI(APIView):
+    response_class = JSONResponse
+    def post(self, request):
+        response_object = dict()
+        # get information from frontend
+        try:
+            lecture_id = int(request.POST.get('lecture_id'))
+        except Exception as exception:
+            return self.error(err=exception.args, msg="lecture_id:%s\n" % ( request.POST.get('lecture_id') ) )
+        try:
+            # delete lecture
+            lec=Lecture.objects.get(id=lecture_id)
+            lec.delete()
+
+            #successful return 
+            response_object["state_code"] = 200 
+            return self.success(response_object)
+        except Exception as exception:
+            return self.error(err=exception.args, msg=str(exception))
+
+
+class AddFileAPI(APIView):
+    response_class = JSONResponse
+    def post(self, request):
+        response_object = dict()
+        # get information from frontend
+        try:
+            lecture_id = int(request.POST.get('lecture_id'))
+            filename= request.POST.get('filename')
+            file=request.POST.get('file')
+        except Exception as exception:
+            return self.error(err=exception.args, msg="lecture_id:%s, filename:%s, file:%s\n" % (request.POST.get('lecture_id'),request.POST.get('filename'),request.POST.get('file') ))
+        try:
+            # add course file 
+            lecture=Lecture.objects.get(id=lecture_id)
+
+            course_resource=CourseResource(name=filename,file=file)
+            course_resource.save()
+            lecture.resources.add(course_resource)
+
+            #successful return 
+            response_object["state_code"] = 200 
+            return self.success(response_object)
+        except Exception as exception:
+            return self.error(err=exception.args, msg=str(exception))
+
