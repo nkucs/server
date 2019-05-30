@@ -3,7 +3,6 @@ from django.http import HttpResponse
 from django.contrib import auth
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import Group
-<<<<<<< HEAD
 from django.contrib.sessions.models import Session
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from rest_framework.permissions import IsAuthenticated
@@ -11,13 +10,11 @@ from rest_framework.response import Response
 from utils.api import APIView, JSONResponse
 from ..serializers import RoleSerializers
 from ..models import Role, Permission, User, Student, Teacher, Admin
-=======
 from django.db.models import Model
 
 from utils.api import APIView, JSONResponse
 from ..serializers import RoleSerializers, TeacherSerializer
 from ..models import Role, Permission, User
->>>>>>> b63d99b93fb034c73c7929bd17274fd2e1abbf9a
 
 
 class GetRoleAPI(APIView):
