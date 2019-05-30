@@ -2,10 +2,11 @@ import functools
 from django.contrib import auth
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import AnonymousUser
+from django.contrib.auth.decorators import login_required
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 # from rest_framework.permissions import IsAuthenticated
 from utils.api import APIView, JSONResponse
-from ..models import User, Student, Teacher, Admin
+from user.models import User, Student, Teacher, Admin
 
 class BasePermissionDecorator(object):
     def __init__(self, func):
@@ -30,9 +31,6 @@ class BasePermissionDecorator(object):
     def check_permission(self):
         raise NotImplementedError()
 
-class login_required(BasePermissionDecorator):
-    def check_permission(self):
-        return self.request.user.is_authenticated()
 
 class admin_required(BasePermissionDecorator):
     @login_required
@@ -55,3 +53,13 @@ class teach_required(BasePermissionDecorator):
         teach_query = Teacher.objects.filter(user=user)
         return teach_query.exists()
 
+def cookie_required(func):
+    def wrapper(*args, **kwargs):
+        request = args[1]
+        if request.session.test_cookie_worked():
+            request.session.delete_test_cookie()
+            return func(*args, **kwargs)
+        else:
+            return request.error(err='Please enable cookies and try again')
+        request.session.set_test_cookie()
+        return warpper

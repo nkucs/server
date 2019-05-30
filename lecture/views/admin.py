@@ -1,14 +1,17 @@
 from utils.api import APIView, JSONResponse
 from lecture.models import Lecture, LectureProblem
 from django.db import models
+from django.contrib.auth.decorators import login_required
+from django.contrib.sessions.models import Session
 from course.models import Course
 from lecture.serializers import LectureSerializers
 from ..serializers import LectureSerializers, GetLectureSerializer
 from problem.models import Problem
-from user.views.decorators import login_required, teach_required
+from user.decorators import teach_required
 
 class CreateLectureAPI(APIView):
     response_class = JSONResponse
+    @teach_required
     def post(self, request):
         response_object = dict()
         # get information from frontend
@@ -28,11 +31,14 @@ class CreateLectureAPI(APIView):
             return self.error(err=exception, msg=str(exception))
 
 
-@teach_required
 class GetMyLecturesAPI(APIView):
     response_class = JSONResponse
+
+    #@teach_required
     def get(self, request):
         # initialize the response object
+        print('user:', request.user)
+        print('user-id:', request.user.id)
         response_object = dict()
         # get information from frontend
         try:
@@ -55,6 +61,7 @@ class GetMyLecturesAPI(APIView):
 class GetLectureAPI(APIView):
     response_class = JSONResponse
 
+    @teach_required
     def get(self, request):
         lecture_id = request.GET.get('lecture_id')
         if not lecture_id:
@@ -71,6 +78,7 @@ class GetLectureAPI(APIView):
 
 class GetLectureByNameAPI(APIView):
     response_class = JSONResponse
+    @teach_required
     def get(self, request):
         # initialize the response object
         response_object = dict()
@@ -97,6 +105,7 @@ class GetLectureByNameAPI(APIView):
 
 class EditProblems(APIView):
     response_class = JSONResponse
+    @teach_required
     def post(self, request):
         response_object = dict()
         # get information from frontend
