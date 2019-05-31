@@ -1,6 +1,6 @@
 from ..models import Problem
-from ..serializers import GetProblemSerializer,ProblemSubmissionTimeSerializers,ProblemSubmission,ProblemSubmissionCase,GetCasesSerializer
-from ..models import Problem,Case
+from ..serializers import GetProblemSerializer,ProblemSubmissionTimeSerializers,ProblemSubmission,ProblemSubmissionCase,GetCasesSerializer,GetTagsSerializer
+from ..models import Problem,Case,Tag
 from utils.api import APIView, JSONResponse
 from rest_framework import status
 from django.http import HttpResponse, JsonResponse
@@ -10,12 +10,17 @@ class GetProblemAPI(APIView):
     """
     def get(self, request):
         problem_id = int(request.GET.get('problem_id'))
+        cases = []
         # query from database
         try:
             problem = Problem.objects.get(id=problem_id)
+            cases_number = Case.objects.filter(problem=problem_id).count()
             cases_list = Case.objects.filter(problem=problem_id)
-            cases_serializer= GetCasesSerializer(cases_list).data
-            problem.cases = cases_serializer
+            for i in range(cases_number):
+                case = cases_list[i]
+                cases_serializer= GetCasesSerializer(case).data
+                cases.append(cases_serializer)
+            problem.cases = cases
         except Problem.DoesNotExist:
             return HttpResponse(status=404)
         serializer = GetProblemSerializer(problem)

@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from submission.models import Problem,ProblemSubmission,ProblemSubmissionCase
 from submission.serializers import ProblemSubmissionTimeSerializers
-from .models import Case
+from .models import Case,Tag
 
 
 class GetProblemSerializer(serializers.ModelSerializer):
@@ -12,10 +12,17 @@ class GetProblemSerializer(serializers.ModelSerializer):
          'memory_limit', 'created_at','modified_at','tags','cases')
     def get_cases(self,obj):
         return obj.cases
-        
-class GetCasesSerializer(serializers.ModelSerializer):
+
+class GetTagsSerializer(serializers.ModelSerializer):
 
     class Meta:
+        model = Tag
+        fields = ('id', 'name')
+        
+class GetCasesSerializer(serializers.ModelSerializer):
+    tags = GetTagsSerializer(many=True)
+    class Meta:
         model = Case
-        fields = ('id', 'input', 'output')
-    
+        fields = ('id', 'input', 'output','tags')
+
+
