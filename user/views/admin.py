@@ -4,7 +4,7 @@ from django.db.models import Model
 
 from utils.api import APIView, JSONResponse
 from ..serializers import RoleSerializers, TeacherSerializer
-from ..models import Role, Permission, User
+from ..models import Role, Permission, User, Student, Gender, UserStatus
 
 
 class GetRoleAPI(APIView):
@@ -295,3 +295,51 @@ class RoleTeacherAPI(APIView):
             group.user_set.remove(user)
 
         return self.success({'state_code': 0})
+
+class CreateStudentAPI(APIView):
+    response_class = JSONResponse
+
+    def post(self, request):
+        response_object = dict()
+        try:
+            name = request.data.get('name')
+            username = request.data.get('account')
+            student_number = request.data.get('student_number')
+            gender = request.data.get('gender')
+            room = request.data.get('room')
+            province = request.data.get('province')
+            status = request.data.get('status')
+            class_name = request.data.get('class_name')
+            if name is None or username is None or student_number is None or room is None or province is None or status is None :
+                raise Exception()
+        except Exception as exception:
+            msg = "name:%s, description:%s\n" % (
+                request.data.get('name'),
+                request.data.get('account'),
+                request.data.get('student_number'),
+                request.data.get('gender'),
+                request.data.get('province'),
+                request.data.get('status'),
+                request.data.get('room'),
+                request.data.get('class_name'))
+            return self.error(err=[400, msg])
+        try:
+            # insert new role into database
+            if not UserStatus.objects.get(name=status):
+                UserStatus.objects.create(name=status)
+            status_ = UserStatus.objects.get(name=status)
+            
+            if not Gender.objects.get(name=gender):
+                Gender.objects.create(name=gender)
+            gender_ = Gender.objects.get(name=gender)
+            
+            
+            
+            User.objects.create(username=username,name=name,user_status=status_,gender=gender_)
+            user = User.objects.get(username=username)
+            Student.objects.create(student_number=student_number,user=user,room=room,province=province,class_name=class_name)
+            response_object["state_code"] = 0
+            return self.success(response_object)
+        except Exception as exception:
+            response_object["state_code"] = -1
+            return self.error(err=exception.args, msg=response_object)
