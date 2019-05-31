@@ -6,6 +6,9 @@ from course.models import Course, CourseResource
 from lecture.serializers import LectureSerializers
 from ..serializers import LectureSerializers, GetLectureSerializer
 from problem.models import Problem
+from django.views.decorators.http import require_http_methods
+from django.shortcuts import render
+from django.http import HttpResponse
 
 class CreateLectureAPI(APIView):
     response_class = JSONResponse
@@ -77,20 +80,20 @@ class EditProblems(APIView):
             problem_ids = request.POST.get('problem_ids')
         except Exception as exception:
             return self.error(err=exception.args, msg="lecture_id:%s, problem_ids:%s\n"%(request.POST.get('lecture_id'), request.POST.get('problem_ids')))
-        try:
-            # insert new problems into database
-            lecture = Lecture.objects.get(id=lecture_id)
-            for i in problem_ids:
-                problem = Problem.objects.get(id=i.problem_id)
-                lecture.problems.add(problem)
-                lp = LectureProblem(lecture=lecture, problem=problem)
-                lp.save()
-
-            response_object['lecture_id'] = lecture.id
-            response_object['problem_ids'] = lecture.problems
-            return self.success(response_object)
-        except Exception as exception:
-            return self.error(err=exception, msg=str(exception))
+            try:
+                # insert new problems into database
+                # lecture = Lecture.objects.get(id=lecture_id)
+                for i in problem_ids:
+                    id = i.problem_id
+                    LP = LectureProblem.object.filter(lecture=lecture_id, problem=id)
+                    if len(LP)<=0:
+                        lp = LectureProblem(lecture=lecture_id, problem=id)
+                        lp.save()
+                        response_object['lecture_id'] = lecture_id
+                        response_object['problem_ids'] = problem_ids
+                        return self.success(response_object)
+            except Exception as exception:
+                return self.error(err=exception, msg=str(exception))
 
 class EditLectureAPI(APIView):
     response_class = JSONResponse
@@ -161,22 +164,21 @@ class AddFileAPI(APIView):
 
 class DeleteProblems(APIView):
     response_class = JSONResponse
-    def post(self, request):
+    def get(self, request):
         response_object = dict()
         # get information from frontend
         try:
-            lecture_id = int(request.POST.get('lecture_id'))
-            problem_ids = request.POST.get('problem_ids')
+            lecture_id = int(request.GET.get('lectureId'))
+            problem_id = request.GET.get('problemId')
         except Exception as exception:
             return self.error(err=exception.args, msg="lecture_id:%s, problem_ids:%s\n"%(request.POST.get('lecture_id'), request.POST.get('problem_ids')))
         try:
             # delete imformation in database
             lecture = Lecture.objects.get(id=lecture_id)
-            for i in problem_ids:
-                problem = Problem.objects.get(id=i.problem_id)
-                lp = LectureProblem.objects.filter(lecture=lecture, problem=problem)
-                lp.delete()
-                lecture.problems.delete(problem)
+            print(lecture)
+            problem = Problem.objects.get(id=problem_id)
+            print(problem)
+            lecture.problems.remove(problem)
 
             response_object['success'] = 200
             return self.success(response_object)
@@ -188,21 +190,26 @@ class DeleteProblems(APIView):
 
 class DeleteCourseResource(APIView):
     response_class = JSONResponse
-    def post(self, request):
+    def get(self, request):
+        print('test')
         response_object = dict()
         # get information from frontend
         try:
-            lecture_id = int(request.POST.get('lecture_id'))
-            resources_name = request.POST.get('file_name')
+            print(request.GET)
+            lecture_id = int(request.GET.get('lectureId'))
+            file_id = request.GET.get('fileName')
+            print(lecture_id)
+            print(file_id)
         except Exception as exception:
-            return self.error(err=exception.args, msg="lecture_id:%s, resources_name:%s\n"%(request.POST.get('lecture_id'), request.POST.get('file_name')))
+            return self.error(err=exception.args, msg="lecture_id:%s, file_id:%s\n"%(request.POST.get('lecture_id'), request.POST.get('file_id')))
         try:
             # insert new problems into database
-            resources = CourseResource.objects.get(name=file_name)
-            resource = resources.lectures.get(id=lecture_id)
             lecture = Lecture.objects.get(id=lecture_id)
-            lecture.remove(resource)
-            resource.delete()
+            resource = CourseResource.objects.get(id = file_id)
+            print(lecture)
+            print(resource)
+            lecture.resources.remove(resource)
+            #resource.delete()
             response_object['success'] = 200
             return self.success(response_object)
         except Exception as exception:
@@ -210,25 +217,27 @@ class DeleteCourseResource(APIView):
 
 
 
-
+@require_http_methods(["POST"])
 def file_download(request):
     try:
-        lecture_id = int(request.POST.get('lecture_id'))
-        resources_name = request.POST.get('file_name')
+        resources_namelist = eval(list(request.POST.keys())[0])
+        resources_name = resources_namelist["file_name"]
     except Exception as exception:
         errormsg=error(err=exception.args, msg="lecture_id:%s, resources_name:%s\n"%(request.POST.get('lecture_id'), request.POST.get('file_name')))
         response['error'] = errormsg
     def file_iterator(file_name, chunk_size=512):
-        with open(file_name) as f:
+        filepath = r'/mnt/d/lecture1.pdf' #实际使用时将路径改成文件所在的路径
+        with open(filepath,'rb') as f:
             while True:
                 c = f.read(chunk_size)
                 if c:
                     yield c
                 else:
                     break
-    resources = CourseResource.objects.get(name=file_name)
-    resource = resources.lectures.get(id=lecture_id)
-    the_file_name = resource.file
+    print(resources_name)
+    resources = CourseResource.objects.get(file=resources_name)
+    print(resources)
+    the_file_name = resources.file.url
     response = StreamingHttpResponse(file_iterator(the_file_name))
     response['Content-Type'] = 'application/octet-stream'
     response['Content-Disposition'] = 'attachment;filename="{0}"'.format(the_file_name)
