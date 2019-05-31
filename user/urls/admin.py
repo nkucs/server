@@ -1,5 +1,5 @@
 from django.conf.urls import url
-from user.views.admin import CreateRoleAPI, GetRoleAPI, GetRoleTeacherListAPI, GetRoleAddTeacherListAPI, RoleTeacherAPI, CreateStudentAPI, GetStudentAPI
+from user.views.admin import CreateRoleAPI, GetRoleAPI, GetRoleTeacherListAPI, GetRoleAddTeacherListAPI, RoleTeacherAPI, CreateStudentAPI, GetStudentAPI, UpdateStudentAPI
 from user.views.admin import GetRoleListAPI, DeleteRoleAPI, ModifyRoleAPI
 
 urlpatterns = [
@@ -14,5 +14,6 @@ urlpatterns = [
     url(r'role-teacher/?$', RoleTeacherAPI.as_view(), name="role-teacher"),
 
     url(r'student_create/?$', CreateStudentAPI.as_view(), name="student_create"),
-    url(r'student_get/?$', GetStudentAPI.as_view(), name="student_create"),
+    url(r'student_get/?$', GetStudentAPI.as_view(), name="student_get"),
+    url(r'student_update/?$', UpdateStudentAPI.as_view(), name="student_update"),
 ]
