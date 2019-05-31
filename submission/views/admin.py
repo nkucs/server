@@ -54,3 +54,4 @@ class GetSubmissionsAPI(APIView):
         response_object['current_page'] = page
         response_object['submissions'] = problemSubmission
         return JsonResponse(response_object,status=status.HTTP_200_OK)
+    
