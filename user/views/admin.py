@@ -320,10 +320,10 @@ class CreateStudentAPI(APIView):
 
         try:
             # insert new role into database
-            if not UserStatus.objects.filter(name=status):
+            if UserStatus.objects.filter(name=status).count() is 0:
                 UserStatus.objects.create(name=status)
             status_ = UserStatus.objects.get(name=status)       
-            if not Gender.objects.filter(name=gender):
+            if Gender.objects.filter(name=gender).count() is 0:
                 Gender.objects.create(name=gender)
             gender_ = Gender.objects.get(name=gender)
             User.objects.create(username=username,name=name,user_status=status_,gender=gender_)
@@ -361,3 +361,45 @@ class GetStudentAPI(APIView):
             return self.success(ansDict)
         except Exception as exception:
             return self.error(err=exception.args)
+
+
+class UpdateStudentAPI(APIView):
+    """修改学生信息"""
+    response_class = JSONResponse
+
+    def post(self, request):
+        response_object = dict()
+        try:
+            name = request.data.get('name')
+            username = request.data.get('account')
+            student_number = request.data.get('student_number')
+            gender = request.data.get('gender')
+            room = request.data.get('room')
+            province = int(request.data.get('province'))
+            status = request.data.get('status')
+            class_name = request.data.get('class_name')
+            if name is None or username is None or student_number is None or room is None or province is None or status is None or class_name is None or gender is None:
+                raise Exception()
+        except Exception as exception:
+            msg = "name:%s, description:%s \n" % (
+                request.data.get('name'),
+                request.data.get('account'))
+            return self.error(err=[400, msg])
+
+        try:
+            # insert new role into database
+            student = Student.objects.get(student_number=student_number)
+            if Gender.objects.filter(name=gender).count() is 0:
+                Gender.objects.create(name=gender)
+            if UserStatus.objects.filter(name=status).count() is 0:
+                UserStatus.objects.create(name=status)           
+            new_status = UserStatus.objects.get(name=status)
+            new_gender = Gender.objects.get(name=gender)
+            user_id = student.user.id
+            User.objects.filter(id=user_id).update(name=name,username=username,gender=new_gender,user_status=new_status)
+            Student.objects.filter(student_number=student_number).update(room=room,province=province,class_name=class_name)
+            response_object["state_code"] = 0
+            return self.success(response_object)
+        except Exception as exception:
+            response_object["state_code"] = -1
+            return self.error(err=exception.args, msg=response_object)
