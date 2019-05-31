@@ -2,7 +2,6 @@ import functools
 from django.contrib import auth
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import AnonymousUser
-from django.contrib.auth.decorators import login_required
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 # from rest_framework.permissions import IsAuthenticated
 from utils.api import APIView, JSONResponse
@@ -33,25 +32,22 @@ class BasePermissionDecorator(object):
 
 
 class admin_required(BasePermissionDecorator):
-    @login_required
     def check_permission(self):
         user = self.request.user
         admin_query = Admin.objects.filter(user=user)
-        return admin_query.exists()
+        return user.is_authenticated and admin_query.exists()
 
 class stu_required(BasePermissionDecorator):
-    @login_required
     def check_permission(self):
         user = self.request.user
         stu_query = Student.objects.filter(user=user)
-        return stu_query.exists()
+        return user.is_authenticated and stu_query.exists()
 
 class teach_required(BasePermissionDecorator):
-    @login_required
     def check_permission(self):
         user = self.request.user
         teach_query = Teacher.objects.filter(user=user)
-        return teach_query.exists()
+        return user.is_authenticated and teach_query.exists()
 
 def cookie_required(func):
     def wrapper(*args, **kwargs):

@@ -1,20 +1,16 @@
 import math
+from importlib import import_module
 from django.http import HttpResponse
 from django.contrib import auth
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import Group
 from django.contrib.sessions.models import Session
+from django.conf import settings
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from utils.api import APIView, JSONResponse
-from ..serializers import RoleSerializers
-from ..models import Role, Permission, User, Student, Teacher, Admin
-from django.db.models import Model
-
 from utils.api import APIView, JSONResponse
 from ..serializers import RoleSerializers, TeacherSerializer
-from ..models import Role, Permission, User
+from ..models import Role, Permission, User, Student, Teacher, Admin
+from django.db.models import Model
 
 
 class GetRoleAPI(APIView):
@@ -173,52 +169,52 @@ class ModifyRoleAPI(APIView):
             response_object["state_code"] = -1
             return self.error(err=exception.args, msg=response_object)
 
-class UserAuthAPI(APIView):
+class UserLoginAPI(APIView):
+    """用户登录"""
     authentication_classes = (SessionAuthentication, BasicAuthentication)
-    # permission_classes = (IsAuthenticated,)
     response_class = HttpResponse
 
     def post(self, request, usertype):
+        response_object = dict()
+        data = request.data        
         validType = ['stud', 'admi', 'teac']
-        if usertype in validType:
-            response_object = dict()
-            data = request.data
-            username = data["username"]
-            password = data["password"]
-            remember = data["rememberMe"]
-        else:
+        username = data["username"]
+        password = data["password"]
+        remember = data["rememberMe"]
+        if usertype not in validType:
             msg = "Illegal login request."
             return self.error(err=msg)
+
         user = authenticate(username=username, password=password)
         if not user:
-            response_object["state_code"] = -1
             msg = "Wrong username or password"
-            return self.error(err=msg, msg=response_object)      
+            return self.error(err=msg)
+
+        if usertype == 'stud':
+            specuser = Student.objects.filter(user=user)
+        elif usertype == 'teac':
+            specuser = Teacher.objects.filter(user=user)
         else:
-            user_id = user.id
-            if usertype == 'stud':
-                user = Student.objects.get(user_id=user_id)
-            elif usertype == 'teac':
-                user = Teacher.objects.get(user_id=user_id)
-            else:
-                user = Admin.objects.get(user_id=user_id)
-            if user is None:
-                response_object["state_code"] = -1
-                msg = "Permission denied."
-                return self.error(err=msg, msg=response_object)
-        if not remember:
-            request.session.flush()
-        else:
-            request.session["user_id"] = user.id
-            request.session.create()
-            sessionID = request.session.session_key
-            response_object["sessionID"] = sessionID
-            print('sessionID:', sessionID)
+            specuser = Admin.objects.filter(user=user)
+        if not specuser.exists():
+            msg = "Permission denied."
+            return self.error(err=msg)
+
         auth.login(request, user)
-        response_object["state_code"] = 0
+        if not remember:
+            request.session.set_expiry(0)
+        else:
+            request.session.set_expiry(60 * 60 * 24 * 30)
         response_object["user_id"] = user.id
         return self.success(response_object)
 
+class UserLogoutAPI(APIView):
+    """用户退出登录"""
+    def get(self, request):
+        response_object = dict()
+        auth.logout(request)
+        response_object["state_code"] = 0
+        return self.success(response_object)
 
 class Paginator:
     """分页器"""

@@ -16,9 +16,10 @@ class CreateLectureAPI(APIView):
         response_object = dict()
         # get information from frontend
         try:
-            course_id = int(request.POST.get('course_id'))
-            name = request.POST.get('name')
-            description = request.POST.get('description')
+            data = request.data
+            course_id = int(data['course_id'])
+            name = data['name']
+            description = data['description']
         except Exception as exception:
             return self.error(err=exception.args, msg="course_id:%s, name:%s, description:%s\n"%(request.POST.get('course_id'), request.POST.get('name'), request.POST.get('description')))
         try:
@@ -34,11 +35,9 @@ class CreateLectureAPI(APIView):
 class GetMyLecturesAPI(APIView):
     response_class = JSONResponse
 
-    #@teach_required
+    @teach_required
     def get(self, request):
         # initialize the response object
-        print('user:', request.user)
-        print('user-id:', request.user.id)
         response_object = dict()
         # get information from frontend
         try:
@@ -152,13 +151,15 @@ class EditLectureAPI(APIView):
 
 class DeleteLectureAPI(APIView):
     response_class = JSONResponse
+    @teach_required
     def post(self, request):
         response_object = dict()
         # get information from frontend
         try:
-            lecture_id = int(request.POST.get('lecture_id'))
+            data = request.data
+            lecture_id = int(data['lecture_id'])
         except Exception as exception:
-            return self.error(err=exception.args, msg="lecture_id:%s\n" % ( request.POST.get('lecture_id') ) )
+            return self.error(err=exception.args, msg="lecture_id:%s\n" % ( data['lecture_id'] ) )
         try:
             # delete lecture
             lec=Lecture.objects.get(id=lecture_id)

@@ -24,5 +24,5 @@ urlpatterns = [
     url(r"^exam/student", include("exam.urls.admin")),
     url(r"^teacher/course/", include("course.urls.admin")),
     url(r"^api/student/", include("lab.urls.student")),
-    url(r"^api/auth/", include("user.urls.auth")),
+    url(r"^auth/", include("user.urls.auth")),
 ]
