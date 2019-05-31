@@ -2,20 +2,23 @@ from utils.api import APIView
 from rest_framework import status
 from ..serializers import ProblemSubmissionSerializers1
 from django.http import HttpResponse, JsonResponse
-from ..models import ProblemSubmission, LabSubmission, Attachment
+from submission.models import ProblemSubmission
+from lab.models import LabSubmission,Attachment
 
-class GetAllSubmissionAPI(APIView):
+class GetAllSubmissionAPI(APIView): # 获取一个学生的所有提交记录
     def get(self, request):
-        submission_student_id = int(request.GET.get('submission_student_id'))
+        # submission_student_id = int(request.GET.get('submission_student_id'))
         # query from database for submissions of student
-        try:
-            UserPersonalSubmission = ProblemSubmission.objects.get(id_student=submission_student_id)
-        except UserPersonalSubmission.DoesNotExist:
-            return HttpResponse(status=404)
+        # id_student=submission_student_id
+        # try:
+        print("@@@@@@@@@@@@@@@@")
+        UserPersonalSubmission = str(ProblemSubmission.objects.count())
+        # except UserPersonalSubmission.DoesNotExist:
+        #     return HttpResponse(status=404)
         serializer = ProblemSubmissionSerializers1(UserPersonalSubmission)
         return JsonResponse(serializer.data,status=status.HTTP_200_OK)
 
-class GetUserSubmissionAPI(APIView):
+class GetUserSubmissionAPI(APIView): #  获取一个学生关于一道题目的提交记录
     def get(self, request):
         submission_student_id = int(request.GET.get('submission_student_id'))
         submission_problem_id = int(request.GET.get('submission_problem_id'))
@@ -27,7 +30,7 @@ class GetUserSubmissionAPI(APIView):
         serializer = ProblemSubmissionSerializers1(ProblemSubmission)
         return JsonResponse(serializer.data,status=status.HTTP_200_OK)
 
-class AddLabAttachment(APIView):
+class AddLabAttachmentAPI(APIView):
     # create submission of a lab
     def post(self, request):
         submission_student_id = int(request.GET.get('id_user'))
