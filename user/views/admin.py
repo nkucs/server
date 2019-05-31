@@ -64,8 +64,7 @@ class CreateRoleAPI(APIView):
         except Exception as exception:
             msg = "name:%s, description:%s\n" % (
                 request.data.get('name'),
-                request.data.get('description'),
-                request.data.get('permission'))
+                request.data.get('description'))
             return self.error(err=[400, msg])
         try:
             # insert new role into database
@@ -145,8 +144,7 @@ class ModifyRoleAPI(APIView):
         except Exception as exception:
             msg = "name:%s, description:%s\n" % (
                 request.data.get('name'),
-                request.data.get('description'),
-                request.data.get('permission'))
+                request.data.get('description'))
             return self.error(err=[400, msg])
         try:
             # update role
@@ -296,7 +294,9 @@ class RoleTeacherAPI(APIView):
 
         return self.success({'state_code': 0})
 
+
 class CreateStudentAPI(APIView):
+    """新建学生"""
     response_class = JSONResponse
 
     def post(self, request):
@@ -307,34 +307,25 @@ class CreateStudentAPI(APIView):
             student_number = request.data.get('student_number')
             gender = request.data.get('gender')
             room = request.data.get('room')
-            province = request.data.get('province')
+            province = int(request.data.get('province'))
             status = request.data.get('status')
             class_name = request.data.get('class_name')
-            if name is None or username is None or student_number is None or room is None or province is None or status is None :
+            if name is None or username is None or student_number is None or room is None or province is None or status is None or class_name is None or gender is None:
                 raise Exception()
         except Exception as exception:
-            msg = "name:%s, description:%s\n" % (
+            msg = "name:%s, description:%s \n" % (
                 request.data.get('name'),
-                request.data.get('account'),
-                request.data.get('student_number'),
-                request.data.get('gender'),
-                request.data.get('province'),
-                request.data.get('status'),
-                request.data.get('room'),
-                request.data.get('class_name'))
+                request.data.get('account'))
             return self.error(err=[400, msg])
+
         try:
             # insert new role into database
-            if not UserStatus.objects.get(name=status):
+            if not UserStatus.objects.filter(name=status):
                 UserStatus.objects.create(name=status)
-            status_ = UserStatus.objects.get(name=status)
-            
-            if not Gender.objects.get(name=gender):
+            status_ = UserStatus.objects.get(name=status)       
+            if not Gender.objects.filter(name=gender):
                 Gender.objects.create(name=gender)
             gender_ = Gender.objects.get(name=gender)
-            
-            
-            
             User.objects.create(username=username,name=name,user_status=status_,gender=gender_)
             user = User.objects.get(username=username)
             Student.objects.create(student_number=student_number,user=user,room=room,province=province,class_name=class_name)
@@ -343,3 +334,30 @@ class CreateStudentAPI(APIView):
         except Exception as exception:
             response_object["state_code"] = -1
             return self.error(err=exception.args, msg=response_object)
+
+
+class GetStudentAPI(APIView):
+    response_class = JSONResponse
+
+    # get方法，参数用params放在url后面
+
+    def get(self, request):
+        # get information from frontend
+        try:
+            student_number = request.GET.get('student_number')
+        except Exception as exception:
+            msg = "id_role:%s\n" % (request.GET.get('student_number'))
+            return self.error(err=[400, msg])
+        try:
+            student = Student.objects.get(student_number=student_number)
+            ansDict = dict()
+            ansDict['name'] = student.user.name
+            ansDict['username'] = student.user.username
+            ansDict['gender'] = student.user.gender.name
+            ansDict['room'] = student.room
+            ansDict['province'] = student.province
+            ansDict['class_name'] = student.class_name
+            ansDict['staus'] = student.user.user_status.name
+            return self.success(ansDict)
+        except Exception as exception:
+            return self.error(err=exception.args)
