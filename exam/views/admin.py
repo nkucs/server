@@ -61,3 +61,67 @@ class GetIdStudentAPI(APIView):
         except Exception as e:
             # not found
             return self.error(msg=str(e), err=e.args)    
+
+class GetNameStudentAPI(APIView):
+    response_class = JSONResponse
+    def post(self, request):
+        student_name = request.GET.get('name')
+        exam_id = request.GET.get('exam_id')
+        if not student_name:
+                #not found
+                return self.error(msg=f"student_name key is None", err=request.GET)
+        try:
+            # query for the lecture
+            students = User.objects.fliter(name = student_name)
+            exam = Exam.objects.get(id = exam_id)
+            stu_list = []
+            for student in students:
+                stu = StudentExam.objects.get(exam = exam,student = student)
+                stu_list.append(
+                    {
+                        'student_number':stu.student_number,
+                        'name':stu.user.name,
+                        'type':stu.type,
+                        'grade':stu.grade,
+                        'password':stu.password,
+                    }
+                )
+            return self.success(stu_list)
+        except Exception as e:
+            # not found
+            return self.error(msg=str(e), err=e.args)    
+
+class AddStudentAPI(APIView):
+    response_class = JSONResponse
+    def post(self, request):
+        exam_id = request.GET.get('exam_id')
+        id = request.GET.getlist('id')
+        type = request.GET.getlist('type')
+        num = len(id)
+        exam = Exam.objects.get(id = exam_id)
+        for i in num:
+            stu = Student.objects.get(id = id[i])
+            student = StudentExam.objects.create(
+                student = stu,
+                exam = exam,
+                type = type[i], 
+                grade = '',
+                password = 1,
+                finished = '',
+                problem_submissions = '', 
+            )
+            student.save()
+
+
+class DeleteStudentAPI(APIView):
+    response_class = JSONResponse
+    def post(self, request):
+        exam_id = request.GET.get('exam_id')
+        id = request.GET.getlist('id')
+        num = len(id)
+        exam = Exam.objects.get(id = exam_id)
+        for i in num:
+            stu = Student.objects.get(id = id[i])
+            student = StudentExam.objects.get(exam = exam,student = stu)
+            student.del_status = True
+            student.save()
