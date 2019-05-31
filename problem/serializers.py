@@ -33,4 +33,4 @@ class GetProblemsSerializer(serializers.ModelSerializer):
         #un_ac_count = ProblemSubmissionCase.objects.filter(problem_submission=id_problem_submission).count()
         #return  sub_count - un_ac_count
         #return '20'
-        return ProblemSubmission.objects.filter(problem=obj.id).count()/2
+        return ProblemSubmission.objects.filter(problem=obj.id).count()//2
