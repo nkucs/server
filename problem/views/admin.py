@@ -28,7 +28,7 @@ class CreateProblemAPI(APIView):
 
             # add problem_tags
             for problem_tag in problem_tags:
-                tag = Tag.objects.get(id=int(problem_tag['tag_id']))
+                tag = Tag.objects.get(name=problem_tag)
                 problem.tags.add(tag)  # add tag to problem
 
             # add cases to case table 
@@ -42,7 +42,7 @@ class CreateProblemAPI(APIView):
                 case = Case.objects.create(input=case_input,output=case_output,type=case_type,problem=problem,weight=weight)
                 # add case_tags
                 for case_tag in case_tags:
-                    tag = Tag.objects.get(id=int(case_tag['tag_id']))
+                    tag = Tag.objects.get(name=case_tag)
                     case.tags.add(tag)  # add tag to case
 
             return self.success(response_object)
@@ -82,7 +82,7 @@ class EditProblemAPI(APIView):
             problem.tags.clear()
             # add new tags
             for problem_tag in problem_tags:
-                tag = Tag.objects.get(id=int(problem_tag['tag_id']))
+                tag = Tag.objects.get(name=problem_tag)
                 problem.tags.add(tag)
 
             # change the problem cases
@@ -102,7 +102,7 @@ class EditProblemAPI(APIView):
                 case = Case.objects.create(input=case_input,output=case_output,type=case_type,problem=problem,weight=weight)
                 # add case_tags
                 for case_tag in case_tags:
-                    tag = Tag.objects.get(id=int(case_tag['tag_id']))
+                    tag = Tag.objects.get(name=case_tag)
                     case.tags.add(tag) 
 
             return self.success(response_object)
@@ -132,6 +132,6 @@ class AddTagAPI(APIView):
             tag = Tag.objects.create(name=name)
             response_object['tag_id'] = tag.id
         except Exception as exception:
-            return self.error(err=exception.args,msg="tag_name:%s"(request.POST.get('tag_name')))
+            return self.error(err=exception.args, msg="tag_name: %s"%(request.POST.get('tag_name')))
         else:
             return self.success(response_object)
