@@ -3,6 +3,9 @@ from django.http import HttpResponse, JsonResponse
 from django.db import models
 from user.models import Teacher, User
 from course.models import CourseTeacher, Course
+from lecture.models import *
+from exam.models import *
+from lab.models import *
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 import datetime
 
@@ -215,3 +218,81 @@ class GetCourseDetailsAPI(APIView):
         except Exception as e:
             # not found
             return self.error(msg=str(e), err=e.args)
+
+class GetMyStudentsAPI(APIView):
+    def get(self, request):
+        page = request.GET.get("page")
+        page_length = request.GET.get("page_length")
+        student_number = request.GET.get("student_number")
+        student_name = request.GET.get("student_name")
+        course_id = request.GET.get("course_id")
+        course = Course.objects.get(id=course_id)
+        students = course.students.all().filter(student_number__icontains=student_number, user__name__icontains=student_name)
+        paginator = Paginator(students, page_length)
+        students = paginator.page(page)
+        results = []
+        for student in students:
+            results.append({
+                'key' : student.id,
+                'name' : student.user.name,
+                'number' : student.student_number,
+                'description' : "没有描述"
+            })
+        return self.success({'students':results,
+            'totalPages':paginator.num_pages,
+            'current': page,
+            'all_student': len(results)})
+            
+class GetMyProblemsAPI(APIView):
+    def get(self, request):
+        page = request.GET.get("page")
+        page_length = request.GET.get("page_length")
+        problem_name = request.GET.get("problem_name")
+        course_id = request.GET.get("course_id")
+        course = Course.objects.get(id=course_id)
+        problems = []
+        '''Now for lectures'''
+        lectures = Lecture.objects.filter(course=course)
+        lectureproblems = LectureProblem.objects.filter(lecture__in=lectures, problem__name__icontains=problem_name)
+        for lectureproblem in lectureproblems:
+            problem = lectureproblem.problem
+            problems.append({
+                'code': problem.code,
+                'name': problem.name,
+                'description': problem.description,
+                'type': '练习题'
+                })
+                
+        '''Now for labs'''
+        labs = Lab.objects.filter(course=course)
+        labproblems = LabProblem.objects.filter(lab__in=labs, problem__name__icontains=problem_name)
+        for labproblem in labproblems:
+            problem = labproblem.problem
+            problems.append({
+                'code': problem.code,
+                'name': problem.name,
+                'description': problem.description,
+                'type': '实验题'
+                })
+                
+        '''Now for exams'''
+        exams = Exam.objects.filter(course=course)
+        examproblems = ExamProblem.objects.filter(exam__in=exams, problem__name__icontains=problem_name)
+        for examproblem in examproblems:
+            problem = examproblem.problem
+            problems.append({
+                'code': problem.code,
+                'name': problem.name,
+                'description': problem.description,
+                'type': '考试题'
+                })
+                
+        paginator = Paginator(problems, page_length)
+        problems = paginator.page(page)
+        results = []
+        for problem in problems:
+            results.append(problem)
+        return self.success({'problems':results,
+            'totalPages':paginator.num_pages,
+            'current': page,
+            'all_problems': len(results)})
