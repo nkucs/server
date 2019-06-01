@@ -1,3 +1,4 @@
+from functools import partial
 from utils.api import APIView, JSONResponse
 from django.http import StreamingHttpResponse
 from lecture.models import Lecture, LectureProblem
@@ -5,15 +6,16 @@ from django.db import models
 from course.models import Course
 from ..serializers import LectureSerializers, GetLectureSerializer
 from problem.models import Problem
-from user.decorators import teach_required
+from user.permission import RolePermission
 from course.models import Course, CourseResource
 from django.views.decorators.http import require_http_methods
 from django.shortcuts import render
 from django.http import HttpResponse
 
 class CreateLectureAPI(APIView):
+    permission_classes = (partial(RolePermission, ['teacher']),)
     response_class = JSONResponse
-    @teach_required
+
     def post(self, request):
         response_object = dict()
         # get information from frontend
@@ -35,9 +37,9 @@ class CreateLectureAPI(APIView):
 
 
 class GetMyLecturesAPI(APIView):
+    permission_classes = (partial(RolePermission, ['teacher']),)
     response_class = JSONResponse
 
-    @teach_required
     def get(self, request):
         # initialize the response object
         response_object = dict()
@@ -62,7 +64,6 @@ class GetMyLecturesAPI(APIView):
 class GetLectureAPI(APIView):
     response_class = JSONResponse
 
-    @teach_required
     def get(self, request):
         lecture_id = request.GET.get('lecture_id')
         if not lecture_id:
@@ -78,8 +79,9 @@ class GetLectureAPI(APIView):
 
 
 class GetLectureByNameAPI(APIView):
+    permission_classes = (partial(RolePermission, ['teacher']),)
     response_class = JSONResponse
-    @teach_required
+
     def get(self, request):
         # initialize the response object
         response_object = dict()
@@ -106,7 +108,7 @@ class GetLectureByNameAPI(APIView):
 
 class EditProblems(APIView):
     response_class = JSONResponse
-    @teach_required
+
     def post(self, request):
         response_object = dict()
         # get information from frontend
@@ -152,8 +154,9 @@ class EditLectureAPI(APIView):
             return self.error(err=exception.args, msg=str(exception))
 
 class DeleteLectureAPI(APIView):
+    permission_classes = (partial(RolePermission, ['teacher']),)
     response_class = JSONResponse
-    @teach_required
+
     def post(self, request):
         response_object = dict()
         # get information from frontend

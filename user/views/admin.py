@@ -4,7 +4,6 @@ from django.http import HttpResponse
 from django.contrib import auth
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import Group
-from django.contrib.sessions.models import Session
 from django.conf import settings
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from utils.api import APIView, JSONResponse

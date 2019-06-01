@@ -3,7 +3,8 @@ from lecture.views.admin import CreateLectureAPI
 from lecture.views.admin import GetMyLecturesAPI
 from lecture.views.admin import DeleteCourseResource
 from lecture.views.admin import DeleteProblems
-from lecture.views.admin import GetLectureAPI
+from lecture.views.admin import GetLectureAPI, GetLectureByNameAPI, EditLectureAPI
+from lecture.views.admin import DeleteLectureAPI, AddFileAPI
 from ..views import admin
 urlpatterns = [
     url(r'create-lecture/?$', CreateLectureAPI.as_view(), name="create-lecture"),
