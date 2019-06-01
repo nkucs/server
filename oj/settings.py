@@ -35,6 +35,7 @@ VENDOR_APPS = [
     # installed middleware
     'rest_framework',
     'corsheaders'
+    'rest_framework_swagger',
 ]
 
 LOCAL_APPS = [
