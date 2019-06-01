@@ -1,10 +1,15 @@
 import math
+from importlib import import_module
+from django.http import HttpResponse
+from django.contrib import auth
+from django.contrib.auth import authenticate
 from django.contrib.auth.models import Group
-from django.db.models import Model
-
+from django.conf import settings
+from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from utils.api import APIView, JSONResponse
 from ..serializers import RoleSerializers, TeacherSerializer
-from ..models import Role, Permission, User, Student, Gender, UserStatus
+from ..models import Role, Permission, User, Student, Teacher, Admin, Gender, UserStatus
+from django.db.models import Model
 
 
 class GetRoleAPI(APIView):
@@ -161,6 +166,52 @@ class ModifyRoleAPI(APIView):
             response_object["state_code"] = -1
             return self.error(err=exception.args, msg=response_object)
 
+class UserLoginAPI(APIView):
+    """用户登录"""
+    authentication_classes = (SessionAuthentication, BasicAuthentication)
+    response_class = HttpResponse
+
+    def post(self, request, usertype):
+        response_object = dict()
+        data = request.data        
+        validType = ['stud', 'admi', 'teac']
+        username = data["username"]
+        password = data["password"]
+        remember = data["rememberMe"]
+        if usertype not in validType:
+            msg = "Illegal login request."
+            return self.error(err=msg)
+
+        user = authenticate(username=username, password=password)
+        if not user:
+            msg = "Wrong username or password"
+            return self.error(err=msg)
+
+        if usertype == 'stud':
+            specuser = Student.objects.filter(user=user)
+        elif usertype == 'teac':
+            specuser = Teacher.objects.filter(user=user)
+        else:
+            specuser = Admin.objects.filter(user=user)
+        if not specuser.exists():
+            msg = "Permission denied."
+            return self.error(err=msg)
+
+        auth.login(request, user)
+        if not remember:
+            request.session.set_expiry(0)
+        else:
+            request.session.set_expiry(60 * 60 * 24 * 30)
+        response_object["user_id"] = user.id
+        return self.success(response_object)
+
+class UserLogoutAPI(APIView):
+    """用户退出登录"""
+    def get(self, request):
+        response_object = dict()
+        auth.logout(request)
+        response_object["state_code"] = 0
+        return self.success(response_object)
 
 class Paginator:
     """分页器"""

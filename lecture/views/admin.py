@@ -1,24 +1,29 @@
+from functools import partial
 from utils.api import APIView, JSONResponse
 from django.http import StreamingHttpResponse
 from lecture.models import Lecture, LectureProblem
 from django.db import models
-from course.models import Course, CourseResource
-from lecture.serializers import LectureSerializers
+from course.models import Course
 from ..serializers import LectureSerializers, GetLectureSerializer
 from problem.models import Problem
+from user.permission import RolePermission
+from course.models import Course, CourseResource
 from django.views.decorators.http import require_http_methods
 from django.shortcuts import render
 from django.http import HttpResponse
 
 class CreateLectureAPI(APIView):
+    permission_classes = (partial(RolePermission, ['teacher']),)
     response_class = JSONResponse
+
     def post(self, request):
         response_object = dict()
         # get information from frontend
         try:
-            course_id = int(request.POST.get('course_id'))
-            name = request.POST.get('name')
-            description = request.POST.get('description')
+            data = request.data
+            course_id = int(data['course_id'])
+            name = data['name']
+            description = data['description']
         except Exception as exception:
             return self.error(err=exception.args, msg="course_id:%s, name:%s, description:%s\n"%(request.POST.get('course_id'), request.POST.get('name'), request.POST.get('description')))
         try:
@@ -32,7 +37,9 @@ class CreateLectureAPI(APIView):
 
 
 class GetMyLecturesAPI(APIView):
+    permission_classes = (partial(RolePermission, ['teacher']),)
     response_class = JSONResponse
+
     def get(self, request):
         # initialize the response object
         response_object = dict()
@@ -70,8 +77,38 @@ class GetLectureAPI(APIView):
             # not found
             return self.error(msg=str(e), err=e.args)
 
+
+class GetLectureByNameAPI(APIView):
+    permission_classes = (partial(RolePermission, ['teacher']),)
+    response_class = JSONResponse
+
+    def get(self, request):
+        # initialize the response object
+        response_object = dict()
+        # get information from frontend
+        try:
+            page = int(request.GET.get('page'))
+            course_id = int(request.GET.get('course_id'))
+            page_length = int(request.GET.get('page_length'))
+            name = request.GET.get('name')
+        except Exception as exception:
+            return self.error(err=exception.args, msg="course_id:%s, page:%s\n"%(request.GET.get('course_id'), request.GET.get('page')))
+        try:
+            # query from database filter the specific data
+            query_set = Lecture.objects.filter( course_id=course_id, name__icontains=name)
+            lectures_amount = query_set.count()
+            lectures_list = query_set[(page - 1) * page_length : page * page_length].values('id', 'name')
+            response_object['total_counts'] = lectures_amount
+            response_object['lectures'] = LectureSerializers(lectures_list, many=True).data
+            return self.success(response_object)
+        except Exception as exception:
+            return self.error(err=exception.args, msg=str(exception))
+
+
+
 class EditProblems(APIView):
     response_class = JSONResponse
+
     def post(self, request):
         response_object = dict()
         # get information from frontend
@@ -117,14 +154,17 @@ class EditLectureAPI(APIView):
             return self.error(err=exception.args, msg=str(exception))
 
 class DeleteLectureAPI(APIView):
+    permission_classes = (partial(RolePermission, ['teacher']),)
     response_class = JSONResponse
+
     def post(self, request):
         response_object = dict()
         # get information from frontend
         try:
-            lecture_id = int(request.POST.get('lecture_id'))
+            data = request.data
+            lecture_id = int(data['lecture_id'])
         except Exception as exception:
-            return self.error(err=exception.args, msg="lecture_id:%s\n" % ( request.POST.get('lecture_id') ) )
+            return self.error(err=exception.args, msg="lecture_id:%s\n" % ( data['lecture_id'] ) )
         try:
             # delete lecture
             lec=Lecture.objects.get(id=lecture_id)
