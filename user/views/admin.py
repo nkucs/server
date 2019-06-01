@@ -5,6 +5,7 @@ from django.contrib import auth
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import Group
 from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from utils.api import APIView, JSONResponse
 from ..serializers import RoleSerializers, TeacherSerializer
@@ -171,6 +172,7 @@ class UserLoginAPI(APIView):
     authentication_classes = (SessionAuthentication, BasicAuthentication)
     response_class = HttpResponse
 
+    @csrf_exempt
     def post(self, request, usertype):
         response_object = dict()
         data = request.data        
