@@ -406,9 +406,9 @@ class GetStudentAPI(APIView):
             ansDict['username'] = student.user.username
             ansDict['gender'] = student.user.gender.name
             ansDict['room'] = student.room
-            ansDict['province'] = student.province
+            ansDict['province'] = str(student.province)
             ansDict['class_name'] = student.class_name
-            ansDict['staus'] = student.user.user_status.name
+            ansDict['status'] = student.user.user_status.name
             return self.success(ansDict)
         except Exception as exception:
             return self.error(err=exception.args)
