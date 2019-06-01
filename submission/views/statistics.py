@@ -1,7 +1,9 @@
-from utils.api import APIView
-from ..models import ProblemSubmission, CaseStatus
-from django.db.models import Q
+import pytz
+import datetime
+import time
+import numpy as np
 
+from django.db.models import Q
 from utils.api import APIView, JSONResponse
 from rest_framework import status
 from ..serializers import ProblemSubmissionSerializers1
@@ -9,6 +11,7 @@ from django.http import HttpResponse, JsonResponse
 from ..models import ProblemSubmission, CaseStatus
 from problem.models import Problem, Tag
 from lecture.models import Lecture
+from course.models import Course
 
 class GetSubmissionStatAPI(APIView):
 
@@ -84,3 +87,120 @@ class GetWordCloud(APIView):
                     break
             status_list.append(flag)
         return status_list
+
+
+def judge_AC(case_status):
+    """判断CaseStatus_id对应的测试案例通过情况"""
+    status_list = case_status.name
+    for status in status_list:
+        if status is '0':
+            return False
+    return True
+
+
+def get_submission_count_by_day(required_submissions):
+    day_count = {'total': np.zeros(12), 'AC': np.zeros(
+        12), 'not_AC': np.zeros(12)}
+    now = datetime.datetime.now()
+    zero_today = now - datetime.timedelta(
+        hours=now.hour, minutes=now.minute, seconds=now.second, microseconds=now.microsecond)
+    submissions = required_submissions.filter(created_at__gt=zero_today)
+    for submission in submissions:
+        day_count['total'][submission.created_at.hour//2] += 1
+        if judge_AC(submission.submission_status):
+            day_count['AC'][submission.created_at.hour//2] += 1
+        else:
+            day_count['not_AC'][submission.created_at.hour//2] += 1
+    return day_count
+
+
+def get_submission_count_by_week(required_submissions):
+    total_count = dict()
+    AC_count = dict()
+    not_AC_count = dict()
+    week_count = {'total': total_count, 'AC': AC_count, 'not_AC': not_AC_count}
+    now = datetime.datetime.now()
+    for i in range(-6, 1):
+        day = now + datetime.timedelta(days=i)
+        day_format = day.strftime('%Y-%m-%d')
+        total_count[day_format] = 0
+        AC_count[day_format] = 0
+        not_AC_count[day_format] = 0
+    zero_today = now - datetime.timedelta(
+        hours=now.hour, minutes=now.minute, seconds=now.second, microseconds=now.microsecond)
+    zero_end = zero_today + datetime.timedelta(hours=24)
+    zero_start = zero_end - datetime.timedelta(hours=24*7)
+    submissions = required_submissions.filter(created_at__gt=zero_start)
+    for submission in submissions:
+        day = submission.created_at.strftime('%Y-%m-%d')
+        total_count[day] += 1
+        if judge_AC(submission.submission_status):
+            AC_count[day] += 1
+        else:
+            not_AC_count[day] += 1
+    return week_count
+
+
+def get_submission_count_by_month(required_submissions):
+    month_count = {'total': np.zeros(
+        12), 'AC': np.zeros(12), 'not_AC': np.zeros(12)}
+    now = datetime.datetime.now()
+    print(now.year)
+    zero_start = datetime.datetime(
+        year=now.year, month=1, day=1, hour=0, minute=0, second=0)
+    submissions = required_submissions.filter(created_at__gt=zero_start)
+    for submission in submissions:
+        month_count['total'][submission.created_at.month-1] += 1
+        if judge_AC(submission.submission_status):
+            month_count['AC'][submission.created_at.month-1] += 1
+        else:
+            month_count['not_AC'][submission.created_at.month-1] += 1
+    return month_count
+
+
+def get_submission_count_by_year(required_submissions):
+    total_count = dict()
+    AC_count = dict()
+    not_AC_count = dict()
+    year_count = {'total': total_count, 'AC': AC_count, 'not_AC': not_AC_count}
+    now = datetime.datetime.now()
+    this_year = now.year
+    for year_offset in range(-4, 1):
+        total_count[this_year+year_offset] = 0
+        AC_count[this_year+year_offset] = 0
+        not_AC_count[this_year+year_offset] = 0
+    zero_start = datetime.datetime(
+        year=now.year-4, month=1, day=1, hour=0, minute=0, second=0, tzinfo=pytz.UTC)
+    submissions = required_submissions.filter(created_at__gt=zero_start)
+    for submission in submissions:
+        total_count[submission.created_at.year] += 1
+        if judge_AC(submission.submission_status):
+            AC_count[submission.created_at.year] += 1
+        else:
+            not_AC_count[submission.created_at.year] += 1
+    return year_count
+
+
+class GetSubmissionCountAPI(APIView):
+    response_class = JSONResponse
+
+    def get(self, request):
+        date_range = request.GET.get('date_range')
+        couse_id = request.GET.get('couse_id')
+        course = Course.objects.get(id=couse_id)
+        lectures = Lecture.objects.filter(course=course)
+        required_submissions = lectures[0].problem_submissions.all()
+        for lecture in lectures[1:]:
+            required_submissions.extend(lecture.problem_submissions.all())
+        if date_range == 'day':
+            day_count = get_submission_count_by_day(required_submissions)
+            return self.success(day_count)
+        elif date_range == 'week':
+            week_count = get_submission_count_by_week(required_submissions)
+            return self.success(week_count)
+        elif date_range == 'month':
+            month_count = get_submission_count_by_month(required_submissions)
+            return self.success(month_count)
+        elif date_range == 'year':
+            year_count = get_submission_count_by_year(required_submissions)
+            return self.success(year_count)
