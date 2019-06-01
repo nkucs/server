@@ -8,10 +8,11 @@ from utils.api import APIView, JSONResponse
 from rest_framework import status
 from ..serializers import ProblemSubmissionSerializers1
 from django.http import HttpResponse, JsonResponse
-from ..models import ProblemSubmission, CaseStatus
+from ..models import ProblemSubmission, CaseStatus, ProblemSubmissionCase
 from problem.models import Problem, Tag
-from lecture.models import Lecture
+from lecture.models import Lecture, LectureProblem
 from course.models import Course
+
 
 class GetSubmissionStatAPI(APIView):
 
@@ -20,8 +21,10 @@ class GetSubmissionStatAPI(APIView):
         submission_num = dict()
         try:
             submission_status = CaseStatus.objects.all()
-            submission_num[0] = ProblemSubmission.objects.filter(submission_status=submission_status[1].id).count()
-            submission_num[1] = ProblemSubmission.objects.filter(~Q(submission_status=submission_status[1].id)).count()
+            submission_num[0] = ProblemSubmission.objects.filter(
+                submission_status=submission_status[1].id).count()
+            submission_num[1] = ProblemSubmission.objects.filter(
+                ~Q(submission_status=submission_status[1].id)).count()
         except ProblemSubmission.DoesNotExist:
             return self.error("error")
 
@@ -39,7 +42,9 @@ def get_tags(problem_id):
 class GetWordCloud(APIView):
     def get(self, request):
         course_id = request.GET.get("course_id")
-        problems = Lecture.objects.get(id=course_id).problems.all()
+        courses = Course.objects.get(id=course_id)
+        lectures = Lecture.objects.get(course=courses)
+        problems = lectures.problems.all()
         # problems = ProblemSubmission.objects.all().values('id')
         status_obj = ProblemSubmission.objects.filter()
         status_list = self.get_status(status_obj)
@@ -204,3 +209,49 @@ class GetSubmissionCountAPI(APIView):
         elif date_range == 'year':
             year_count = get_submission_count_by_year(required_submissions)
             return self.success(year_count)
+
+
+class GetSubmissionTags(APIView):
+
+    def get(self, request):
+        response = dict()
+        course_id = request.GET.get("course_id")
+        try:
+            lectures = Lecture.objects.filter(course_id=course_id)
+        except Lecture.DoesNotExist:
+            return self.error("error")
+        problems = []
+        for lecture in lectures:
+            for rel in LectureProblem.objects.filter(lecture_id=lecture.id):
+                problems.append(rel.problem)
+        submissions = []
+        for problem in problems:
+            for rel in ProblemSubmission.objects.filter(problem_id=problem.id):
+                submissions.append(rel)
+        submissionCases = []
+        for submission in submissions:
+            for rel in ProblemSubmissionCase.objects.filter(
+                    problem_submission_id=submission.id):
+                submissionCases.append(rel)
+
+        Case1 = CaseStatus.objects.get(name="通过")
+
+        response['ans'] = []
+        tags_name = []
+        for subCase in submissionCases:
+            tags = subCase.case.tags
+            for tag in tags.all():
+                name = tag.name
+                if name not in tags_name:
+                    tags_name.append(name)
+                    response['ans'].append(
+                        {'标签': name, '通过数': 0, '未通过数': 0, '总数': 0})
+                index = tags_name.index(name)
+                if subCase.case_status_id == Case1.id:
+                    response['ans'][index]['通过数'] += 1
+                response['ans'][index]['总数'] += 1
+        for raw in response['ans']:
+            raw['未通过数'] = raw['总数'] - raw['通过数']
+
+        return JsonResponse(response, status=status.HTTP_200_OK, safe=False)
+
