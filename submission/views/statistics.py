@@ -191,8 +191,8 @@ class GetSubmissionCountAPI(APIView):
 
     def get(self, request):
         date_range = request.GET.get('date_range')
-        couse_id = request.GET.get('couse_id')
-        course = Course.objects.get(id=couse_id)
+        course_id = request.GET.get('course_id')
+        course = Course.objects.get(id=course_id)
         lectures = Lecture.objects.filter(course=course)
         required_submissions = lectures[0].problem_submissions.all()
         for lecture in lectures[1:]:
@@ -255,3 +255,47 @@ class GetSubmissionTags(APIView):
 
         return JsonResponse(response, status=status.HTTP_200_OK, safe=False)
 
+
+class GetSubmissionInfoAPI(APIView):
+
+    def get(self, request):
+        response = []
+        problem_ids = {}
+        course_id = request.GET.get("course_id")
+        try:
+            lectures = Lecture.objects.filter(course_id=course_id)
+        except Lecture.DoesNotExist:
+            return self.error("error")
+        required_submissions = []
+        index = 0
+        for lecture in lectures:
+            print(lecture.id, 'ddddd')
+            required_submissions.extend(lecture.problem_submissions.all())
+            for rel in LectureProblem.objects.filter(lecture_id=lecture.id):
+                # print(rel.id, 'cccc')
+                rel_problem = rel.problem
+                problem = dict()
+                if rel_problem.id not in problem_ids:
+                    problem_ids[rel_problem.id] = index
+                    index += 1
+                    problem['problem_id'] = rel_problem.id
+                    problem['problem_name'] = rel_problem.name
+                    problem['start_time'] = rel_problem.created_at.strftime(
+                        '%Y-%m-%d %H:%M:%S')
+                    problem['update_time'] = rel_problem.modified_at.strftime(
+                        '%Y-%m-%d %H:%M:%S')
+                    problem['submit_times'] = 0
+                    problem['AC_times'] = 0
+                    response.append(problem)
+        for submission in required_submissions:
+            problem = submission.problem
+            response[problem_ids[problem.id]]['submit_times'] += 1
+            if judge_AC(submission.submission_status):
+                response[problem_ids[problem.id]]['AC_times'] += 1
+        for problem in response:
+            try:
+                problem['ACrate'] = str(
+                    problem['AC_times'] / problem['submit_times'] * 100) + '%'
+            except:
+                problem['ACrate'] = '0.0%'
+        return JsonResponse(response, status=status.HTTP_200_OK, safe=False)
