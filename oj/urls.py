@@ -14,6 +14,10 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.conf.urls import include, url
+from rest_framework_swagger.views import get_swagger_view
+
+schema_view = get_swagger_view(title="NKCS-OPEP API")
+
 
 urlpatterns = [
     url(r"^api/", include("demo.urls.oj")),
@@ -24,4 +28,5 @@ urlpatterns = [
     url(r"^exam/student", include("exam.urls.admin")),
     url(r"^teacher/course/", include("course.urls.admin")),
     url(r"^api/student/", include("lab.urls.student")),
+    url(r"^swagger$", schema_view)
 ]
