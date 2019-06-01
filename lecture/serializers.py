@@ -22,7 +22,7 @@ class GetLectureFileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CourseResource
-        fields = ('id', 'name')
+        fields = ('id', 'file')
 
 class GetLectureProblemSerializer(serializers.ModelSerializer):
     """
@@ -49,7 +49,7 @@ class GetLectureSerializer(serializers.ModelSerializer):
 
     def get_files(self, obj):
         return GetLectureFileSerializer(obj.resources, many=True).data
-    
-    def get_problems(self, obj):
-        return GetLectureProblemSerializer(obj.resources, many=True).data
 
+    def get_problems(self, obj):
+        print('test')
+        return GetLectureProblemSerializer(obj.problems, many=True).data
