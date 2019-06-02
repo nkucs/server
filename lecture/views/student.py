@@ -16,6 +16,13 @@ def select_lecture_bycourse(course):
         lecture_list.add(lecture)
     return lecture_list
 
+def select_resource_bylectureid(lecture_id):
+    resource_list = set()
+    resources=LectureResource.objects.filter(lecture_id=lecture_id)
+    for resource in resources:
+        resource_list.add(resource)
+    return resource_list
+
 def select_lecture_byname(name):
     lecture_list = set()
     lectures=Lecture.objects.filter(name=name)
@@ -28,7 +35,6 @@ class ShowLecture(APIView):
     response_class = JSONResponse
     def get(self, request):
         response_object = dict()
-        print("hello")
         # get information from frontend
         try:
             course_id = int(request.GET.get('course_id'))
@@ -38,15 +44,34 @@ class ShowLecture(APIView):
             # return lectures to the frontend
             lecture_list=list(select_lecture_bycourse(course_id))
             for i in range(len(lecture_list)):
-                response_object['key']=i
+                response_object['key']=lecture_list[i].id
                 response_object['name']=lecture_list[i].name
-                response_object["source"]=lecture_list[i].description
-                print("cxq")
+                response_object["source"]=lecture_list[i].resources.all()
                 print(response_object)
             return self.success(response_object)
         except Exception as exception:
             return self.error(err=exception, msg=str(exception))
 
+class ShowLectureName(APIView):
+    response_class = JSONResponse
+    def get(self, request):
+        response_object = dict()
+        # get information from frontend
+        try:
+            name = request.GET.get('name')
+        except Exception as exception:
+            return self.error(err=exception.args, msg="name:%s\n"%(request.POST.get('name')))
+        try:
+            # return lectures to the frontend
+            lecture_list=list(select_lecture_byname(name))
+            for i in range(len(lecture_list)):
+                response_object['key']=i+1
+                response_object['name']=lecture_list[i].name
+                response_object["source"]=lecture_list[i].resources.all()
+                print(response_object)
+            return self.success(response_object)
+        except Exception as exception:
+            return self.error(err=exception, msg=str(exception))
 
 class ShowMyLecturesAPI(APIView):
     response_class = JSONResponse
