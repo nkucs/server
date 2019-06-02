@@ -1,8 +1,8 @@
 from utils.api import APIView, JSONResponse
 from rest_framework import status
-from ..serializers import ProblemSubmissionSerializers1
+from course.serializers import CourseSerializers
 from django.http import HttpResponse, JsonResponse
-from ..models import Role, Permission, Student
+from course.models import CourseStudent, Course
 
 def GetStudentAPI(APIView):
     def get(self, request):
@@ -28,3 +28,19 @@ def LoginStudentAPI(APIView):
                 return HttpResponse(status=1)
         else:
             return HttpResponse(status=-1)
+
+
+def GetStudentCourseAPI(APIView):
+    # Get Course of an Student
+    def get(self, request):
+        idStudent = int(request.GET.get('id_student'))
+        courseListID = CourseStudent.object.filter(id_student = idStudent)
+        courseList = []
+        for item in courseListID.data:
+            studentCourse = Course.object.get(id = item.id_course)
+            courseList.append(studentCourse)
+        courseListSerializer = CourseSerializers(courseList)
+        return JsonResponse(courseListSerializer.data,status=status.HTTP_200_OK)
+
+def GetMessageAPI(APiView):
+    pass
