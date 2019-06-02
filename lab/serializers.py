@@ -38,7 +38,7 @@ class GetLabSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lab
         fields = ('name', 'description', 'start_time',
-                  'end_time', 'report_required', 'files')
+                  'end_time', 'report_required', 'files', 'attachment_weight')
 
     def get_files(self, obj):
         return GetLabFileSerializer(obj.resources, many=True).data
