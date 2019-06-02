@@ -353,3 +353,60 @@ class GetACSubmissionRuntimes(APIView):
             data.append(count/num)
         send = {'interval': interval, 'data': data}
         return JsonResponse(send, status=status.HTTP_200_oK)
+
+
+class GetProblemSubmissionCountAPI(APIView):
+    response_class = JSONResponse
+
+    def get(self, request):
+        date_range = request.GET.get('date_range')
+        problem_id = request.GET.get('problem_id')
+        required_submissions = ProblemSubmission.objects.filter(problem=problem_id).order_by('runtime')
+        if date_range == 'day':
+            day_count = get_submission_count_by_day(required_submissions)
+            return self.success(day_count)
+        elif date_range == 'week':
+            week_count = get_submission_count_by_week(required_submissions)
+            return self.success(week_count)
+        elif date_range == 'month':
+            month_count = get_submission_count_by_month(required_submissions)
+            return self.success(month_count)
+        elif date_range == 'year':
+            year_count = get_submission_count_by_year(required_submissions)
+            return self.success(year_count)
+
+
+class GetProblemSubmissionTags(APIView):
+
+    def get(self, request):
+        response = dict()
+        problem_id = request.GET.get("problem_id")
+        submissions = []
+        for rel in ProblemSubmission.objects.filter(problem_id=problem_id):
+            submissions.append(rel)
+        submissionCases = []
+        for submission in submissions:
+            for rel in ProblemSubmissionCase.objects.filter(
+                    problem_submission_id=submission.id):
+                submissionCases.append(rel)
+
+        Case1 = CaseStatus.objects.get(name="通过")
+
+        response['ans'] = []
+        tags_name = []
+        for subCase in submissionCases:
+            tags = subCase.case.tags
+            for tag in tags.all():
+                name = tag.name
+                if name not in tags_name:
+                    tags_name.append(name)
+                    response['ans'].append(
+                        {'标签': name, '通过数': 0, '未通过数': 0, '总数': 0})
+                index = tags_name.index(name)
+                if subCase.case_status_id == Case1.id:
+                    response['ans'][index]['通过数'] += 1
+                response['ans'][index]['总数'] += 1
+        for raw in response['ans']:
+            raw['未通过数'] = raw['总数'] - raw['通过数']
+
+        return JsonResponse(response, status=status.HTTP_200_OK, safe=False)
