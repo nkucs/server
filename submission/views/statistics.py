@@ -2,7 +2,7 @@ import datetime
 import math
 import time
 
-# import numpy as np
+import numpy as np
 import pytz
 from django.db.models import Q
 from django.http import HttpResponse, JsonResponse
