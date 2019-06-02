@@ -38,4 +38,5 @@ urlpatterns = [
     url(r"^administrator/student/", include("user.urls.student")),
     url(r"^teacher/submission/statistics/",
         include("submission.urls.statistics")),
+    url(r"^distribution/", include("submission.urls.statistics")),
 ]
