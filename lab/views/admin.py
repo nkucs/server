@@ -145,7 +145,7 @@ class GetSubmissionFileAPI(APIView):
         try:
             # query for the lab
             course_resource = CourseResource.objects.get(id=attachment_id)
-            return self.response(course_resource.file)
+            return FILEResponse.response(course_resource.file)
         except Exception as e:
             # not found
             return self.error(msg=str(e), err=e.args)
