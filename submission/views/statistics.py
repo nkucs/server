@@ -1,17 +1,20 @@
-import pytz
 import datetime
+import math
 import time
-import numpy as np
 
+# import numpy as np
+import pytz
 from django.db.models import Q
-from utils.api import APIView, JSONResponse
-from rest_framework import status
-from ..serializers import ProblemSubmissionSerializers1
 from django.http import HttpResponse, JsonResponse
-from ..models import ProblemSubmission, CaseStatus, ProblemSubmissionCase
-from problem.models import Problem, Tag
-from lecture.models import Lecture, LectureProblem
+from rest_framework import status
+
 from course.models import Course
+from lecture.models import Lecture, LectureProblem
+from problem.models import Problem, Tag
+from utils.api import APIView, JSONResponse
+
+from ..models import CaseStatus, ProblemSubmission, ProblemSubmissionCase
+from ..serializers import ProblemSubmissionSerializers1
 
 
 class GetSubmissionStatAPI(APIView):
@@ -299,3 +302,54 @@ class GetSubmissionInfoAPI(APIView):
             except:
                 problem['ACrate'] = '0.0%'
         return JsonResponse(response, status=status.HTTP_200_OK, safe=False)
+
+
+class GetSubmissionDistributionAPI(APIView):
+    def get(self, request):
+        print(request)
+        if 'start_date' not in request.GET or \
+           'end_date' not in request.GET or \
+           'student_id' not in request.GET:
+            return HttpResponse(status=status.HTTP_404_NOT_FOUND)
+        student_id = request.GET['student_id']
+        start_time = request.GET['start_date']
+        end_time = request.GET['end_date']
+        start_time = datetime.datetime.strptime(start_time, "%Y-%m-%d")
+        end_time = datetime.datetime.strptime(end_time, "%Y-%m-%d")
+        submission = ProblemSubmission.objects.filter(
+            student=student_id, created_at__range=[start_time, end_time])
+        counts = []
+        t = datetime.time()
+        for i in range(0, 22, 2):
+            subm = submission.filter(
+                created_at__time__range=[datetime.time(i), datetime.time(i+2)])
+            counts.append((subm.count(), subm.filter(submission_status=0).count()))
+        temp = {}
+        temp['ans'] = []
+        for i, c in enumerate(counts):
+            t = {}
+            t["时间段"] = f"{i*2}:00-{(i+1)*2}:00"
+            t["提交数"] = counts[i][0]
+            t["AC数"] = counts[i][1]
+            temp['ans'].append(t)
+        return JsonResponse(temp, status=status.HTTP_200_OK)
+
+
+class GetACSubmissionRuntimes(APIView):
+    def get(self, request):
+        problem_id = request.GET.get('problem_id')
+        problemSubmission = ProblemSubmission.objects.filter(problem=problem_id).order_by('runtime')
+        num = problemSubmission.count()
+        if (problemSubmission.count() < 1):
+            return HttpResponse(status=status.HTTP_404_NOT_FOUND)
+        maxtime = problemSubmission.last().runtime
+        interval = math.ceil(maxtime/10)
+        # i = 0
+        data = []
+
+        for i in range(0, maxtime, interval):
+            count = problemSubmission.filter(
+                runtime__range=(i, i+interval)).count()
+            data.append(count/num)
+        send = {'interval': interval, 'data': data}
+        return JsonResponse(send, status=status.HTTP_200_oK)
