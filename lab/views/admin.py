@@ -108,7 +108,7 @@ class GetLabsAPI(APIView):
         try:
             # query from database
             labs_number = Lab.objects.filter(course=course_id).count()
-            labs_list = Lab.objects.filter(course=course_id)[(page - 1) * list_count : page * list_count].values('id', 'name')
+            labs_list = Lab.objects.filter(course=course_id)[(page - 1) * list_count : page * list_count].values('id', 'name', 'start_time', 'end_time')
             # update response object
             response_object['total_pages'] = labs_number // list_count + 1
             response_object['current_page'] = page
