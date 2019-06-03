@@ -1,12 +1,18 @@
 from utils.api import APIView
 from course.models import Course
+from course.serializers import CourseSerializers
+from utils.api import JSONResponse
+from django.forms import model_to_dict
 
 
-def select_course_by_student(student):
-    student_courses = Course.students.courses.objects.filter(
-        id_student=student._id)
-    return student_courses
-
+class GetAllCourseAPI(APIView):
+    def get(self, request):
+        AllCourse = Course.objects.all()
+        AllCourseResult = []
+        AllCourseResult.append(model_to_dict(AllCourse[0]))
+        AllCourseResult.append(model_to_dict(AllCourse[1]))
+        return self.success(AllCourseResult)
+        
 
 class GetMyCourseAPI(APIView):
     response_class = JSONResponse
