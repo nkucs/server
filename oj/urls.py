@@ -13,6 +13,7 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from django.contrib import admin
 from django.conf.urls import include, url
 from rest_framework_swagger.views import get_swagger_view
 
@@ -20,6 +21,7 @@ schema_view = get_swagger_view(title="NKCS-OPEP API")
 
 
 urlpatterns = [
+    url(r"^admin/", admin.site.urls),
     url(r"^api/", include("demo.urls.oj")),
     url(r"^teacher/lab/", include("lab.urls.admin")),
     url(r"^teacher/submission/", include("submission.urls.admin")),
