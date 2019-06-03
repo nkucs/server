@@ -14,6 +14,7 @@ from utils.api import APIView, JSONResponse
 
 from ..models import CaseStatus, ProblemSubmission, ProblemSubmissionCase
 from ..serializers import ProblemSubmissionSerializers1
+from user.models import Student
 
 
 class GetSubmissionStatAPI(APIView):
@@ -349,3 +350,48 @@ class GetACSubmissionRuntimes(APIView):
             data.append(count/num)
         send = {'interval': interval, 'data': data}
         return JsonResponse(send, status=status.HTTP_200_oK)
+
+
+class CaseTagStatisticsView(APIView):
+
+    def post(self, request):
+        student_id = request.data['student_id']
+        my_status = request.data['status']
+        try:
+            student = Student.objects.get(student_number=student_id)
+        except Student.DoesNotExist:
+            return HttpResponse(status=status.HTTP_404_NOT_FOUND)
+        problems = ProblemSubmission.objects.filter(student=student)
+        problem_cases_row = []
+        for problem in problems:
+            for res in ProblemSubmissionCase.objects.filter(problem_submission=problem):
+                problem_cases_row.append(res)
+        problem_cases = []
+        if my_status == '通过':
+            for c in problem_cases_row:
+                if c.case_status.name == 'AC':
+                    problem_cases.append(c)
+        else:
+            for c in problem_cases_row:
+                if c.case_status.name != 'AC':
+                    problem_cases.append(c)
+        tags = []
+        tags.append({
+            '标签名称': '',
+            '数量': 0
+        })
+        for c in problem_cases:
+            for tag in c.case.tags:
+                flag = 0
+                for t in tags:
+                    if t['标签名称'] == tag.name:
+                        flag = 1
+                        t['数量'] += 1
+                        break
+                if flag == 0:
+                    tags.append({
+                        '标签名称': tag.name,
+                        '数量': 1
+                    })
+        tags.pop(0)
+        return JsonResponse(tags, status=status.HTTP_200_oK)
