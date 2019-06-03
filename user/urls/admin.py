@@ -16,7 +16,7 @@ urlpatterns = [
     url(r'student_get/?$', GetStudentAPI.as_view(), name="student_get"),
     url(r'student_update/?$', UpdateStudentAPI.as_view(), name="student_update"),
 
-    url(r'teacher_create/?$', CreateTeacherAPI.as_view(), name="teacher_create"),
-    url(r'teacher_get/?$', GetTeacherAPI.as_view(), name="teacher_get"),
-    url(r'teacher_update/?$', UpdateTeacherAPI.as_view(), name="teacher_update"),
+    #url(r'teacher_create/?$', CreateTeacherAPI.as_view(), name="teacher_create"),
+    #url(r'teacher_get/?$', GetTeacherAPI.as_view(), name="teacher_get"),
+    #url(r'teacher_update/?$', UpdateTeacherAPI.as_view(), name="teacher_update"),
 ]

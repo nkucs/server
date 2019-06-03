@@ -39,4 +39,5 @@ urlpatterns = [
     url(r"^teacher/submission/statistics/",
         include("submission.urls.statistics")),
     url(r"^distribution/", include("submission.urls.statistics")),
+    url(r"^api/student/course", include("course.urls.student")),
 ]
