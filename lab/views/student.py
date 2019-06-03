@@ -1,5 +1,6 @@
 from utils.api import APIView
 from ..models import Lab
+from ..models import LabProblem
 from course.models import Course
 from ..serializers import GetLabListSerializer,GetLabDetailSerializer
 
@@ -31,3 +32,11 @@ class LabDetailAPI(APIView):
             #     return self.error(msg="不存在该实验", err=400)
         else:
             return self.error(msg="参数错误", err=400)
+
+
+class ProblemHandInAPI(APIView):
+    def get(self, request):
+        # problem_list = request.GET.get('problem_list')
+        # problem_data = LabProblem.objects.all()
+        # return self.success(GetLabDetailSerializer(problem_data).data)
+        return self.success("我成功了！")
