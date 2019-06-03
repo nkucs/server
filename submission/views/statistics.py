@@ -41,22 +41,22 @@ def get_tags(problem_id):
         problem_tags.append(tag.name)
     return problem_tags
 
+
 class GetWordCloud(APIView):
     def get(self, request):
         course_id = request.GET.get("course_id")
         courses = Course.objects.get(id=course_id)
         lectures = Lecture.objects.get(course=courses)
         problems = lectures.problems.all()
-        # problems = ProblemSubmission.objects.all().values('id')
-        status_obj = ProblemSubmission.objects.filter()
-        status_list = self.get_status(status_obj)
 
         j = 0
         tags_dict_ac = dict()
         tags_dict_not_ac = dict()
         for p_id in problems:
+            status_obj = ProblemSubmission.objects.filter(problem_id=p_id.id)
+            status_list = judge_AC(status_obj[0].submission_status)
             tags_list = get_tags(p_id.id)
-            if status_list[j]:
+            if status_list:
                 for tag in tags_list:
                     if tag not in tags_dict_ac.keys():
                         tags_dict_ac[tag] = 0
@@ -83,25 +83,12 @@ class GetWordCloud(APIView):
         words = [wordcloud_data_ac, wordcloud_data_not_ac]
         return JsonResponse(words, status=status.HTTP_200_OK, safe=False)
 
-    def get_status(self, status_obj):
-        status_list = []
-        for st in status_obj:
-            flag = True
-            cases = st.submission_status.name
-            for seq in cases:
-                if seq == '0':
-                    flag = False
-                    break
-            status_list.append(flag)
-        return status_list
-
 
 def judge_AC(case_status):
     """判断CaseStatus_id对应的测试案例通过情况"""
-    status_list = case_status.name
-    for status in status_list:
-        if status is '0':
-            return False
+    status = case_status.name
+    if status is 'accept':
+        return False
     return True
 
 
@@ -234,7 +221,7 @@ class GetSubmissionTags(APIView):
                     problem_submission_id=submission.id):
                 submissionCases.append(rel)
 
-        Case1 = CaseStatus.objects.get(name="通过")
+        Case1 = CaseStatus.objects.get(name="accept")
 
         response['ans'] = []
         tags_name = []
