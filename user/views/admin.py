@@ -456,3 +456,113 @@ class UpdateStudentAPI(APIView):
         except Exception as exception:
             response_object["state_code"] = -1
             return self.error(err=exception.args, msg=response_object)
+
+
+class CreateStudentAPI(APIView):
+    """新建学生"""
+    response_class = JSONResponse
+
+    def post(self, request):
+        response_object = dict()
+        try:
+            name = request.data.get('name')
+            username = request.data.get('account')
+            teacher_number = request.data.get('teacher_number')
+            gender = request.data.get('gender')
+            role=request.data.get('role')
+            status = request.data.get('status')           
+            if role is None or name is None or username is None or teacher_number is None or status is None or gender is None:
+                raise Exception()
+        except Exception as exception:
+            msg = "name:%s, teacher_number:%s \n" % (
+                request.data.get('name'),
+                request.data.get('teacher_number'))
+            return self.error(err=[400, msg])
+
+        try:
+            # insert new role into database
+            if UserStatus.objects.filter(name=status).count() is 0:
+                UserStatus.objects.create(name=status)
+            status_ = UserStatus.objects.get(name=status)       
+            if Gender.objects.filter(name=gender).count() is 0:
+                Gender.objects.create(name=gender)
+            gender_ = Gender.objects.get(name=gender)
+            if Role.objects.filter(name=gender).count() is 0:
+                Role.objects.create(name=group)
+            role_ = Gender.objects.get(name=group)
+            User.objects.create(username=username,name=name,user_status=status_,gender=gender_,role=role_)
+            user = User.objects.get(username=username)
+            Teacher.objects.create(teacher_number=teacher_number)
+            response_object["state_code"] = 0
+            return self.success(response_object)
+        except Exception as exception:
+            response_object["state_code"] = -1
+            return self.error(err=exception.args, msg=response_object)
+
+
+class GetTeacherAPI(APIView):
+    response_class = JSONResponse
+
+    # get方法，参数用params放在url后面
+
+    def get(self, request):
+        # get information from frontend
+        try:
+            teacher_number = request.GET.get('teacher_number')
+        except Exception as exception:
+            msg = "id_role:%s\n" % (request.GET.get('teacher_number'))
+            return self.error(err=[400, msg])
+        try:
+            teacher = Teacher.objects.get(teacher_number=teacher_number)
+            ansDict = dict()
+            ansDict['name'] = teacher.user.name
+            ansDict['username'] = teacher.user.username
+            ansDict['gender'] = teacher.user.gender.name
+            ansDict['role']=teacher.user.role.group
+            ansDict['status'] = teacher.user.user_status.name
+            return self.success(ansDict)
+        except Exception as exception:
+            return self.error(err=exception.args)
+
+
+class UpdateTeacherAPI(APIView):
+    """修改教师信息"""
+    response_class = JSONResponse
+
+    def post(self, request):
+        response_object = dict()
+        try:
+            name = request.data.get('name')
+            username = request.data.get('account')
+            teacher_number = request.data.get('teacher_number')
+            gender = request.data.get('gender')
+            role=request.data.get('role')
+            status = request.data.get('status')           
+            if role is None or name is None or username is None or teacher_number is None or status is None or gender is None:
+                raise Exception()
+        except Exception as exception:
+            msg = "name:%s, teacher_number:%s \n" % (
+                request.data.get('name'),
+                request.data.get('teacher_number'))
+            return self.error(err=[400, msg])
+
+        try:
+            # insert new role into database
+            teacher = Teacher.objects.get(teacher_number=teacher_number)
+            if Gender.objects.filter(name=gender).count() is 0:
+                Gender.objects.create(name=gender)
+            if UserStatus.objects.filter(name=status).count() is 0:
+                UserStatus.objects.create(name=status)          
+            if Role.objects.filter(name=group).count() is 0:
+                Role.objects.create(name=group)       
+            new_status = UserStatus.objects.get(name=status)
+            new_gender = Gender.objects.get(name=gender)
+            new_role =Role.objects.get(group=group)
+            user_id = teacher.user.id
+            User.objects.filter(id=user_id).update(name=name,username=username,gender=new_gender,user_status=new_status,role=new_role)
+            Teacher.objects.filter(teacher_number=teacher_number).update()
+            response_object["state_code"] = 0
+            return self.success(response_object)
+        except Exception as exception:
+            response_object["state_code"] = -1
+            return self.error(err=exception.args, msg=response_object)
