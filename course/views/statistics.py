@@ -5,6 +5,9 @@ from user.models import Teacher, User
 from lecture.models import Lecture, LectureProblem
 from utils.api import APIView, JSONResponse
 
+from django.http import HttpResponse, JsonResponse
+from rest_framework import status
+
 class GetProblemDataAPI(APIView):
 
     def get(self, request):
@@ -49,3 +52,30 @@ class GetTeacherCoursesAPI(APIView):
             return self.success(course_info)
         except Exception as exception:
             return self.error(err=exception.args)
+
+
+class GetCourseStudentNumberAPI(APIView):
+
+    def get(self, request):
+        """选课学生人数统计"""
+        cur_ids = request.GET['course_id']  # is a list
+        cid_len = len(cur_ids)
+        if cid_len < 1:
+            return HttpResponse(status=status.HTTP_404_NOT_FOUND)
+        courses, cur_names, cur_stds, cstd_nums = [], [], [], []
+        for i in range(0, cid_len):
+            get_courses = Course.objects.filter(id=cur_ids[i])
+            if get_courses.count() < 1:
+                return HttpResponse(status=status.HTTP_404_NOT_FOUND)
+            courses.append(get_courses.first())
+            cur_names.append(courses[i].name)
+            cur_stds.append(courses[i].students.all())
+            cstd_nums.append(cur_stds.count)
+        sned = {}
+        send['ans'] = []
+        for i in range(0, cid_len):
+            temp = {}
+            temp["课程"] = cur_names[i]
+            temp["选课人数"] = cstd_nums[i]
+            send['ans'].append(temp)
+        return JsonResponse(send, status=status.HTTP_200_OK)
