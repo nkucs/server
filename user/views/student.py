@@ -1,6 +1,5 @@
 from utils.api import APIView, JSONResponse
 from rest_framework import status
-from course.serializers import CourseSerializers
 from django.http import HttpResponse, JsonResponse
 from course.models import CourseStudent, Course
 import math

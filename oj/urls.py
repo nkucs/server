@@ -37,8 +37,6 @@ urlpatterns = [
     url(r"^auth/", include("user.urls.auth")),
     url(r"^swagger$", schema_view),
     url(r"^teacher/problem/", include("problem.urls.admin")),
-    url(r"^administrator/student/", include("user.urls.student")),
-    url(r"^teacher/submission/statistics/",
-        include("submission.urls.statistics")),
+    url(r"^teacher/submission/statistics/",include("submission.urls.statistics")),
     url(r"^distribution/", include("submission.urls.statistics")),
 ]
