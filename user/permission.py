@@ -1,6 +1,25 @@
 from rest_framework.permissions import BasePermission
 from django.contrib.auth.models import Group
 from .models import Permission
+from user.models import User, Student, Teacher, Admin
+
+class RolePermission(BasePermission):
+    """检查用户角色"""
+
+    def __init__(self, allowed_roles):
+        self.allowed_roles = allowed_roles
+
+    def has_permission(self, request, view):
+        user = request.user
+        permit = False
+        for role in self.allowed_roles:
+            if role == 'student':
+                permit = permit or Student.objects.filter(user=user).exists()
+            elif role == 'teacher':
+                permit = permit or Teacher.objects.filter(user=user).exists()
+            else:
+                permit = permit or Admin.objects.filter(user=user).exists()
+        return user.is_authenticated and permit
 
 
 def getPermission(request, index):
