@@ -1,8 +1,11 @@
+from rest_framework import status
+from rest_framework.response import Response
+
 from utils.api import APIView
 from ..models import Lab
 from ..models import LabProblem
 from course.models import Course
-from ..serializers import GetLabListSerializer,GetLabDetailSerializer
+from ..serializers import GetLabListSerializer, GetLabDetailSerializer, AttachmentSerializer
 
 
 class LabAPI(APIView):
@@ -40,3 +43,17 @@ class ProblemHandInAPI(APIView):
         # problem_data = LabProblem.objects.all()
         # return self.success(GetLabDetailSerializer(problem_data).data)
         return self.success("我成功了！")
+
+class PostAttachmentAPI(APIView):
+    """
+    学生在网页上传文件点击提交后，新增一条Attachment记录
+    API: post-attachment
+    """
+    def post(self, request):
+        serializer = AttachmentSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(status=status.HTTP_201_CREATED)
+        else:
+            return self.error(msg="参数错误", err=400)
