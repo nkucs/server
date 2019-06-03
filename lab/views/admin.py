@@ -108,7 +108,7 @@ class GetLabsAPI(APIView):
         try:
             # query from database
             labs_number = Lab.objects.filter(course=course_id).count()
-            labs_list = Lab.objects.filter(course=course_id)[(page - 1) * list_count : page * list_count].values('id', 'name', 'start_time', 'end_time')
+            labs_list = Lab.objects.filter(course=course_id)[(page - 1) * list_count : page * list_count].values('id', 'name')
             # update response object
             response_object['total_pages'] = labs_number // list_count + 1
             response_object['current_page'] = page
@@ -145,7 +145,7 @@ class GetSubmissionFileAPI(APIView):
         try:
             # query for the lab
             course_resource = CourseResource.objects.get(id=attachment_id)
-            return FILEResponse.response(course_resource.file)
+            return self.response(course_resource.file)
         except Exception as e:
             # not found
             return self.error(msg=str(e), err=e.args)

@@ -58,3 +58,5 @@ class DeleteStaffAPI(APIView):
         except Exception as exception:
             response_object["state_code"] = -1
             return self.error(err=exception.args, msg=response_object)
+
+
