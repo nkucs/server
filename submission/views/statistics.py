@@ -2,7 +2,6 @@ import datetime
 import math
 import time
 
-import numpy as np
 import pytz
 from django.db.models import Q
 from django.http import HttpResponse, JsonResponse
@@ -40,7 +39,6 @@ def get_tags(problem_id):
     for tag in word_tags.tags.all():
         problem_tags.append(tag.name)
     return problem_tags
-
 
 class GetWordCloud(APIView):
     def get(self, request):
@@ -107,8 +105,7 @@ def judge_AC(case_status):
 
 
 def get_submission_count_by_day(required_submissions):
-    day_count = {'total': np.zeros(12), 'AC': np.zeros(
-        12), 'not_AC': np.zeros(12)}
+    day_count = {'total': [0]*12, 'AC': [0]*12, 'not_AC': [0]*12}
     now = datetime.datetime.now()
     zero_today = now - datetime.timedelta(
         hours=now.hour, minutes=now.minute, seconds=now.second, microseconds=now.microsecond)
@@ -150,8 +147,7 @@ def get_submission_count_by_week(required_submissions):
 
 
 def get_submission_count_by_month(required_submissions):
-    month_count = {'total': np.zeros(
-        12), 'AC': np.zeros(12), 'not_AC': np.zeros(12)}
+    month_count = {'total': [0]*12, 'AC': [0]*12, 'not_AC': [0]*12}
     now = datetime.datetime.now()
     print(now.year)
     zero_start = datetime.datetime(
