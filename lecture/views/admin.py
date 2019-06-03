@@ -6,14 +6,12 @@ from django.db import models
 from course.models import Course
 from ..serializers import LectureSerializers, GetLectureSerializer
 from problem.models import Problem
-from user.permission import RolePermission
 from course.models import Course, CourseResource
 from django.views.decorators.http import require_http_methods
 from django.shortcuts import render
 from django.http import HttpResponse
 
 class CreateLectureAPI(APIView):
-    permission_classes = (partial(RolePermission, ['teacher']),)
     response_class = JSONResponse
 
     def post(self, request):
@@ -37,7 +35,6 @@ class CreateLectureAPI(APIView):
 
 
 class GetMyLecturesAPI(APIView):
-    permission_classes = (partial(RolePermission, ['teacher']),)
     response_class = JSONResponse
 
     def get(self, request):
@@ -79,7 +76,6 @@ class GetLectureAPI(APIView):
 
 
 class GetLectureByNameAPI(APIView):
-    permission_classes = (partial(RolePermission, ['teacher']),)
     response_class = JSONResponse
 
     def get(self, request):
@@ -154,7 +150,6 @@ class EditLectureAPI(APIView):
             return self.error(err=exception.args, msg=str(exception))
 
 class DeleteLectureAPI(APIView):
-    permission_classes = (partial(RolePermission, ['teacher']),)
     response_class = JSONResponse
 
     def post(self, request):
