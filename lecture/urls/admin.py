@@ -5,6 +5,8 @@ from lecture.views.admin import GetLectureByNameAPI
 from lecture.views.admin import EditLectureAPI
 from lecture.views.admin import DeleteLectureAPI
 from lecture.views.admin import AddFileAPI
+
+
 urlpatterns = [
     url(r'create-lectures/?$', CreateLectureAPI.as_view(), name="create-lectures"),
     url(r'get-my-lectures/?$', GetMyLecturesAPI.as_view(), name="get-my-lectures"),
