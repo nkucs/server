@@ -39,10 +39,17 @@ class LabDetailAPI(APIView):
 
 class ProblemHandInAPI(APIView):
     def get(self, request):
-        # problem_list = request.GET.get('problem_list')
-        # problem_data = LabProblem.objects.all()
-        # return self.success(GetLabDetailSerializer(problem_data).data)
-        return self.success("我成功了！")
+        problem_list = request.GET.get('problem_list')
+        problem_data = LabProblem.objects.filter(problem = problem_list)
+        return self.success(GetLabDetailSerializer(problem_data).data)
+
+
+class TestDetailAPI(APIView):
+    def get(self,request):
+        id = request.GET.get('test_id')
+        problem_data = LabProblem.objects.filter(problem = problem_list).problem
+        return self.success(GetLabDetailSerializer(problem_data).data)
+        
 
 class PostAttachmentAPI(APIView):
     """
