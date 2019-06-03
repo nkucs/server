@@ -54,7 +54,7 @@ class GetLabListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Lab
-        fields = ('id', 'name', 'start_time', 'end_time')
+        fields = ('name', 'start_time', 'end_time')
 
 
 class LabProblemSerializer(serializers.ModelSerializer):

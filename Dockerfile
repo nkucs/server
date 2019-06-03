@@ -12,4 +12,4 @@ RUN pip install -r /app/requirements.txt
 RUN apk del build-base --purge
 
 
-CMD ["/bin/sh", "/app/deploy/entrypoint.sh"] 
+ENTRYPOINT /app/deploy/entrypoint.sh

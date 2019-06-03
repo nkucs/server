@@ -27,7 +27,9 @@ class GetStudentListAPI(APIView):
             return self.error(err=[400])
         try:
             #if
-            
+            if gender !="":
+                student_gen = Gender.objects.get(name=gender)
+                gender = student_gen.name
             if user_status !="":
                 student_sta = UserStatus.objects.get(name=user_status)
                 user_status = student_sta.name
@@ -35,23 +37,9 @@ class GetStudentListAPI(APIView):
                 student_number__contains=student_number 
             )
             ans = []
-            if gender !="":
-                student_gen = Gender.objects.get(name=gender)
-                gender = student_gen.name
-                for student in students:
-                    if gender == student.user.gender.name:
-                        if  user_status in student.user.user_status.name:
-                            if user_name in student.user.name:
-                                if user_username in student.user.username:
-                                    ansDict = dict()
-                                    ansDict['id'] = student.student_number
-                                    ansDict['name'] = student.user.name
-                                    ansDict['gender'] = student.user.gender.name
-                                    ansDict['account'] = student.user.username
-                                    ansDict['user_status'] = student.user.user_status.name
-                                    ans.append(ansDict)
-            else:
-                for student in students:
+            
+            for student in students:
+                if gender in student.user.gender.name:
                     if  user_status in student.user.user_status.name:
                         if user_name in student.user.name:
                             if user_username in student.user.username:
@@ -62,7 +50,6 @@ class GetStudentListAPI(APIView):
                                 ansDict['account'] = student.user.username
                                 ansDict['user_status'] = student.user.user_status.name
                                 ans.append(ansDict)
-                                
             if (ans.__len__() <= items * (page - 1)):
                 ans = []
             else:

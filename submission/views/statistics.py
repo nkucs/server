@@ -2,6 +2,7 @@ import datetime
 import math
 import time
 
+import numpy as np
 import pytz
 from django.db.models import Q
 from django.http import HttpResponse, JsonResponse
@@ -14,7 +15,6 @@ from utils.api import APIView, JSONResponse
 
 from ..models import CaseStatus, ProblemSubmission, ProblemSubmissionCase
 from ..serializers import ProblemSubmissionSerializers1
-from user.models import Student
 
 
 class GetSubmissionStatAPI(APIView):
@@ -48,15 +48,16 @@ class GetWordCloud(APIView):
         courses = Course.objects.get(id=course_id)
         lectures = Lecture.objects.get(course=courses)
         problems = lectures.problems.all()
+        # problems = ProblemSubmission.objects.all().values('id')
+        status_obj = ProblemSubmission.objects.filter()
+        status_list = self.get_status(status_obj)
 
         j = 0
         tags_dict_ac = dict()
         tags_dict_not_ac = dict()
         for p_id in problems:
-            status_obj = ProblemSubmission.objects.filter(problem_id=p_id.id)
-            status_list = judge_AC(status_obj[0].submission_status)
             tags_list = get_tags(p_id.id)
-            if status_list:
+            if status_list[j]:
                 for tag in tags_list:
                     if tag not in tags_dict_ac.keys():
                         tags_dict_ac[tag] = 0
@@ -83,17 +84,31 @@ class GetWordCloud(APIView):
         words = [wordcloud_data_ac, wordcloud_data_not_ac]
         return JsonResponse(words, status=status.HTTP_200_OK, safe=False)
 
+    def get_status(self, status_obj):
+        status_list = []
+        for st in status_obj:
+            flag = True
+            cases = st.submission_status.name
+            for seq in cases:
+                if seq == '0':
+                    flag = False
+                    break
+            status_list.append(flag)
+        return status_list
+
 
 def judge_AC(case_status):
     """判断CaseStatus_id对应的测试案例通过情况"""
-    status = case_status.name
-    if status is 'accept':
-        return False
+    status_list = case_status.name
+    for status in status_list:
+        if status is '0':
+            return False
     return True
 
 
 def get_submission_count_by_day(required_submissions):
-    day_count = {'total': [0]*12, 'AC': [0]*12, 'not_AC': [0]*12}
+    day_count = {'total': np.zeros(12), 'AC': np.zeros(
+        12), 'not_AC': np.zeros(12)}
     now = datetime.datetime.now()
     zero_today = now - datetime.timedelta(
         hours=now.hour, minutes=now.minute, seconds=now.second, microseconds=now.microsecond)
@@ -135,7 +150,8 @@ def get_submission_count_by_week(required_submissions):
 
 
 def get_submission_count_by_month(required_submissions):
-    month_count = {'total': [0]*12, 'AC': [0]*12, 'not_AC': [0]*12}
+    month_count = {'total': np.zeros(
+        12), 'AC': np.zeros(12), 'not_AC': np.zeros(12)}
     now = datetime.datetime.now()
     print(now.year)
     zero_start = datetime.datetime(
@@ -221,7 +237,7 @@ class GetSubmissionTags(APIView):
                     problem_submission_id=submission.id):
                 submissionCases.append(rel)
 
-        Case1 = CaseStatus.objects.get(name="accept")
+        Case1 = CaseStatus.objects.get(name="通过")
 
         response['ans'] = []
         tags_name = []
@@ -337,48 +353,3 @@ class GetACSubmissionRuntimes(APIView):
             data.append(count/num)
         send = {'interval': interval, 'data': data}
         return JsonResponse(send, status=status.HTTP_200_oK)
-
-
-class CaseTagStatisticsView(APIView):
-
-    def post(self, request):
-        student_id = request.data['student_id']
-        my_status = request.data['status']
-        try:
-            student = Student.objects.get(student_number=student_id)
-        except Student.DoesNotExist:
-            return HttpResponse(status=status.HTTP_404_NOT_FOUND)
-        problems = ProblemSubmission.objects.filter(student=student)
-        problem_cases_row = []
-        for problem in problems:
-            for res in ProblemSubmissionCase.objects.filter(problem_submission=problem):
-                problem_cases_row.append(res)
-        problem_cases = []
-        if my_status == '通过':
-            for c in problem_cases_row:
-                if c.case_status.name == 'AC':
-                    problem_cases.append(c)
-        else:
-            for c in problem_cases_row:
-                if c.case_status.name != 'AC':
-                    problem_cases.append(c)
-        tags = []
-        tags.append({
-            '标签名称': '',
-            '数量': 0
-        })
-        for c in problem_cases:
-            for tag in c.case.tags:
-                flag = 0
-                for t in tags:
-                    if t['标签名称'] == tag.name:
-                        flag = 1
-                        t['数量'] += 1
-                        break
-                if flag == 0:
-                    tags.append({
-                        '标签名称': tag.name,
-                        '数量': 1
-                    })
-        tags.pop(0)
-        return JsonResponse(tags, status=status.HTTP_200_oK)
