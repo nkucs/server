@@ -42,10 +42,17 @@ class PostAttachmentAPI(APIView):
     API: post-attachment
     """
     def post(self, request):
+        # print(request.data)
+        # serializer = AttachmentSerializer(data=request.data)
+        # serializer.is_valid(raise_exception=True)
+        # if serializer.is_valid():
+        #     s = serializer.save()
+        #     return Response(status=status.HTTP_201_CREATED)
+        # else:
+        #     return self.error(msg="参数错误", err=400)
         serializer = AttachmentSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
         if serializer.is_valid():
             serializer.save()
-            return Response(status=status.HTTP_201_CREATED)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
-            return self.error(msg="参数错误", err=400)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -96,29 +96,42 @@ class GetLabDetailSerializer(serializers.ModelSerializer):
                   'report_required', 'problem_weight', 'attachment_weight', 'problem')
 
 
-class LabSubmissionSerializer(serializers.ModelSerializer):
-    """
+class AttachmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Attachment
+        fields = "__all__"
 
-    """
+
+class LabSubmissionSerializer(serializers.ModelSerializer):
+    attachment = AttachmentSerializer(many=True)
+
     class Meta:
         model = LabSubmission
-        fields = ('lab', 'student')
+        fields = "__all__"
 
-
-class AttachmentSerializer(serializers.Serializer):
-    """
-    Serialize an attachment object.
-    """
-    user_id = serializers.IntegerField()
-    lab_id = serializers.IntegerField()
-    file = serializers.FileField()
-
-    def create(self, validated_data):
-        lab = Lab.objects.get(id=validated_data.get('lab_id'))
-        user = Student.objects.get(id=validated_data.get('user_id'))
-        file = validated_data.get('file')
-        lm = LabSubmission.objects.create(lab=lab, student=user)
-        lm.save()
-        am = Attachment.objects.create(lab_submission=lm, file=file)
-        am.save()
-        return am
+# class LabSubmissionSerializer(serializers.ModelSerializer):
+#     """
+#
+#     """
+#     class Meta:
+#         model = LabSubmission
+#         fields = ('lab', 'student')
+#
+#
+# class AttachmentSerializer(serializers.Serializer):
+#     """
+#     Serialize an attachment object.
+#     """
+#     user_id = serializers.IntegerField()
+#     lab_id = serializers.IntegerField()
+#     file = serializers.FileField()
+#
+#     def create(self, validated_data):
+#         lab = Lab.objects.get(id=validated_data.get('lab_id'))
+#         user = Student.objects.get(id=validated_data.get('user_id'))
+#         file = validated_data.get('file')
+#         lm = LabSubmission.objects.create(lab=lab, student=user)
+#         lm.save()
+#         am = Attachment.objects.create(lab_submission=lm, file=file)
+#         am.save()
+#         return am
