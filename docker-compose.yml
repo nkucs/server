@@ -10,7 +10,7 @@ services:
       - DB_NAME=oj
     ports:
       - "0.0.0.0:4000:8000"
-      - "0.0.0.0:4040:80"
+      - "0.0.0.0:80:80"
     container_name: oj-backend
     depends_on: 
       - db
