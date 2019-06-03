@@ -1,7 +1,7 @@
 from django.conf.urls import url
 from ..views.student import LabAPI, LabDetailAPI
 from ..views.student import ProblemHandInAPI
-from ..view.student import TestDetailAPI
+from ..views.student import TestDetailAPI
 
 from ..views.student import LabAPI, LabDetailAPI, PostAttachmentAPI
 
