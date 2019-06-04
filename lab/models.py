@@ -46,7 +46,7 @@ class LabSubmission(models.Model):
 class Attachment(models.Model):
     """学生提交的附件"""
 
-    lab_submission = models.ForeignKey(LabSubmission, null=True, on_delete=models.SET_NULL)
+    lab_submission = models.ForeignKey(LabSubmission, null=True, on_delete=models.SET_NULL, related_name='attachment')
     file = models.FileField(upload_to='uploads/attachments/%Y/%m/')
 
 

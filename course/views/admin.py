@@ -9,7 +9,6 @@ from lab.models import *
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 import datetime
 
-
 def get_course_info(course):
     course_info = dict()
     course_info['course_id'] = course.code
@@ -46,9 +45,26 @@ def get_course_all():
     return course_list
 
 
+class GetNowCourseAPI(APIView):
+    response_class = JSONResponse
+    def get(self, request):
+        response = dict()
+        teacher_number = request.GET.get('teacherId')
+        try:
+            teacher = Teacher.objects.get(teacher_number=teacher_number)
+            courses_teacher = CourseTeacher.objects.filter(teacher=teacher, course__start_time__lt=datetime.date.today(), course__end_time__gt=datetime.date.today())
+            courses_info = list()
+            for course in courses_teacher:
+                courses_info.push(get_course_info(courses_teacher.course))
+            response['courseList'] = courses_info
+            return self.success(response)
+        except Exception as e:
+            return self.error(msg=str(e), err=e.args)
+            
+
 class GetAllCourseAPI(APIView):
     response_class = JSONResponse
-    def post(self, request):
+    def get(self, request):
         response = dict()
         page_length = request.GET.get('pageLength')
         page = request.GET.get('page')
@@ -85,7 +101,7 @@ class GetAllCourseAPI(APIView):
 
 class GetMyCourseAPI(APIView):
     response_class = JSONResponse
-    def post(self, request):
+    def get(self, request):
         esponse = dict()
         teacher_number = request.GET.get('teacherNumber')
         page_length = request.GET.get('pageLength')

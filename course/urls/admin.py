@@ -6,9 +6,10 @@ from course.views.admin import GetMyCourseAPI
 from course.views.admin import AddCourseAPI
 from course.views.admin import UpdateAPI
 from course.views.admin import GetCourseDetailsAPI
-
+from course.views.admin import GetNowCourseAPI
 
 urlpatterns = [
+    url(r'get-now-course/?$', GetNowCourseAPI.as_view(), name="get-now-course"),
     url(r"get-all-course/?$", GetAllCourseAPI.as_view(), name="get-all-course"),
     url(r"get-my-course/?$", GetMyCourseAPI.as_view(), name="get-my-course"),
     url(r"^delete-course/?$", DeleteCourseAPI.as_view(), name="delete-course"),
