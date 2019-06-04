@@ -40,17 +40,20 @@ class GetTeacherCoursesAPI(APIView):
         try:
             courses = CourseTeacher.objects.filter(teacher=teacher_id)
             courses_info = []
-            for one_course in courses:
-                one_course_info = Course.objects.get(id=one_course.course)
+            print(len(courses))
+            for one_course in courses:             
                 one_info ={
-                    "name":one_course_info.name,
-                    "opne_time":one_course_info.start_time,
-                    'student_number':len(one_course_info.student),
-                    'description':one_course_info.description
+                    "name":one_course.course.name,
+                    "opne_time":one_course.course.start_time,
+                    # 'student_number':len(one_course.course.student),
+                    'description':one_course.course.description,
+                    'course_code':one_course.course.code,
+                    'course_id':one_course.course.id
                 }
-                course_info.append(one_info)
-            return self.success(course_info)
+                courses_info.append(one_info)
+            return self.success(courses_info)
         except Exception as exception:
+            print("error")
             return self.error(err=exception.args)
 
 
