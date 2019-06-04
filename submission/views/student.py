@@ -2,7 +2,7 @@ from utils.api import APIView
 from rest_framework import status
 from ..serializers import ProblemSubmissionSerializers1
 from django.http import HttpResponse, JsonResponse
-from submission.models import ProblemSubmission
+from submission.models import ProblemSubmission, CaseStatus
 from lab.models import LabSubmission,Attachment
 from django.forms import model_to_dict
 import time; 
@@ -11,10 +11,16 @@ class GetAllStudentSubmissionAPI(APIView): # 获取一个学生的所有提交�
     def get(self, request):
         submission_student_id = int(request.GET.get('student_id'))
         student_submission = ProblemSubmission.objects.filter(student=submission_student_id)
+        caseStatusResult = CaseStatus.objects.all()
+        caseStatusDemo = []
+        for item in caseStatusResult:
+            caseStatusDemo.append(model_to_dict(item))
+
         student_submission_result = []
         for item in student_submission:
             item_result = model_to_dict(item)
             del item_result['cases']
+            item_result['status'] = caseStatusDemo[int(item_result['submission_status'])]['name']
             student_submission_result.append(item_result)
         return self.success(student_submission_result)
 
