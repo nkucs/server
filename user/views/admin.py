@@ -281,6 +281,7 @@ class GetRoleAddTeacherListAPI(APIView):
 
     def get(self, request):
         role_id = int(request.GET.get('id', 0))
+        print('role_id:', role_id)
         page = int(request.GET.get('page', 1))
         page_size = int(request.GET.get('page_size', 10))
         name_filter = request.GET.get('name', '')
@@ -289,7 +290,7 @@ class GetRoleAddTeacherListAPI(APIView):
 
         try:
             group = Group.objects.get(id=role_id)
-        except Model.DoesNotExist:
+        except Group.DoesNotExist:
             return self.error(err=404, msg='Role does not exist.')
 
         users = User.objects.exclude(groups=group)
@@ -306,8 +307,8 @@ class GetRoleAddTeacherListAPI(APIView):
         return self.success(data=paginator.get_response())
 
 
-class RoleTeacherAPI(APIView):
-    """分配角色或删除分配"""
+class RoleTeacherAddAPI(APIView):
+    """分配角色"""
 
     def post(self, request):
         distributions = request.data.get('distribution', [])
@@ -328,7 +329,11 @@ class RoleTeacherAPI(APIView):
 
         return self.success({'state_code': 0})
 
-    def delete(self, request):
+
+class RoleTeacherDeleteAPI(APIView):
+    """删除分配"""
+
+    def post(self, request):
         remove_list = request.data.get('distribution', [])
 
         for remove_item in remove_list:

@@ -9,12 +9,6 @@ class RoleSerializers(serializers.ModelSerializer):
         model = Role
         fields = '__all__'
 
-
-class TeacherSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = User
-        fields = '__all__'
 from rest_framework import serializers
 from .models import Role, Gender, UserStatus, User, Admin, Teacher
 from django.db.utils import IntegrityError
@@ -64,3 +58,10 @@ class TeacherSerializers(serializers.ModelSerializer):
     class Meta:
         model = Teacher
         fields = '__all__'
+
+class TeacherSerializer (serializers.ModelSerializer):
+    teacher = TeacherSerializers()
+
+    class Meta:
+        model = User
+        fields = ('teacher',)
