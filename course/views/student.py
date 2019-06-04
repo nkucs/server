@@ -1,5 +1,5 @@
 from utils.api import APIView
-from course.models import Course
+from course.models import Course, Message
 from course.serializers import CourseSerializers
 from utils.api import JSONResponse
 from django.forms import model_to_dict
@@ -17,6 +17,26 @@ class GetAllCourseAPI(APIView):
             AllCourseResult.append(item_result)
         return self.success(AllCourseResult)
         
+class GetAllMessageAPI(APIView):
+    #OK#
+    def get(self, request):
+        AllMessage = Message.objects.all()
+        AllMessageResult = []
+        for item in AllMessage:
+            item_result = model_to_dict(item)
+            AllMessageResult.append(item_result)
+        return self.success(AllMessageResult)
+
+class GetMessageOfCourseAPI(APIView):
+    #OK#
+    def get(self, request):
+        course_id = int(request.GET.get('course_id'))
+        AllMessage = Message.objects.filter(course=course_id)
+        AllMessageResult = []
+        for item in AllMessage:
+            item_result = model_to_dict(item)
+            AllMessageResult.append(item_result)
+        return self.success(AllMessageResult)
 
 class GetMyCourseAPI(APIView):
     response_class = JSONResponse
