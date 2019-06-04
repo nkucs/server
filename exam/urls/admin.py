@@ -11,6 +11,7 @@ from exam.views.statistics import DeleteExamAPI
 from exam.views.statistics import FixExamAPI
 from exam.views.statistics import GetNowCourseExamAPI
 from exam.views.statistics import GetLastCourseExamAPI
+from exam.views.statistics import GetAllProblemAPI
 
 urlpatterns = [
     url(r"get-allcontent/?$", GetAllContentAPI.as_view(), name="get-allcontent"),
@@ -24,4 +25,5 @@ urlpatterns = [
     url(r"fix-exam/?$",FixExamAPI.as_view(), name="fix-exam"),
     url(r"get-nowexam/?$",GetNowCourseExamAPI.as_view(), name="get-nowexam"),
     url(r"get-lastexam/?$",GetLastCourseExamAPI.as_view(), name="get-lastexam"),
+    url(r"get-allproblem/?$", GetAllProblemAPI.as_view(), name="get-allproblem"),
 ]
