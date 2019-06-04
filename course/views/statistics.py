@@ -56,26 +56,20 @@ class GetTeacherCoursesAPI(APIView):
 
 class GetCourseStudentNumberAPI(APIView):
 
-    def get(self, request):
+    def post(self, request):
         """选课学生人数统计"""
-        cur_ids = request.GET['course_id']  # is a list
-        cid_len = len(cur_ids)
-        if cid_len < 1:
+        course_ids = request.data['course_ids']
+        courses = Course.objects.filter(id__in=course_ids)
+        if courses.count() < 1:
             return HttpResponse(status=status.HTTP_404_NOT_FOUND)
-        courses, cur_names, cur_stds, cstd_nums = [], [], [], []
-        for i in range(0, cid_len):
-            get_courses = Course.objects.filter(id=cur_ids[i])
-            if get_courses.count() < 1:
-                return HttpResponse(status=status.HTTP_404_NOT_FOUND)
-            courses.append(get_courses.first())
-            cur_names.append(courses[i].name)
-            cur_stds.append(courses[i].students.all())
-            cstd_nums.append(cur_stds.count)
-        sned = {}
+        send = {}
         send['ans'] = []
-        for i in range(0, cid_len):
+        for id in course_ids:
+            if courses.filter(id=id).count() < 1:
+                continue
+            course = courses.filter(id=id).first()
             temp = {}
-            temp["课程"] = cur_names[i]
-            temp["选课人数"] = cstd_nums[i]
+            temp['课程'] = course.name
+            temp['选课人数'] = course.students.count()
             send['ans'].append(temp)
-        return JsonResponse(send, status=status.HTTP_200_OK)
+        return JsonResponse(send, status=status.HTTP_200_OK, safe=False)
