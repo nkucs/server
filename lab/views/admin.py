@@ -1,8 +1,50 @@
 from course.models import Course, CourseResource
+from problem.models import Problem
 from utils.api import APIView, JSONResponse, FILEResponse
-from ..serializers import LabSerializers, GetLabSerializer
+from ..serializers import LabSerializers, GetLabSerializer, GetProblemsSerializer
 from ..models import Lab
 import datetime
+
+class FilterProblemsAPI(APIView):
+    response_class = JSONResponse
+    def get(self, request):
+        list_count = 6
+        response_object = dict()
+        try:
+            code = request.GET.get('code')
+            page = int(request.GET.get('page'))
+            tag_name = request.GET.get('tag_name')
+            problem_name = request.GET.get('problem_name')
+        except Exception as exception:
+            return self.error(err=exception.args,
+                              msg="page:%s, tag_name:%s, code: %s, problem_name: %s\n" % (request.GET.get('page'), request.GET.get('tag_name'), request.GET.get('code'),request.GET.get('problem_name'),))
+
+        try:
+            query_result = None
+            if code != '':
+                query_result = Problem.objects.filter(code=code)
+            else:
+                if problem_name != '':
+                    query_result = Problem.objects.filter(name__icontains=problem_name)
+                    if tag_name != '':
+                        query_result = query_result.filter(tags__name__icontains=tag_name)
+                else:
+                    query_result = Problem.objects.all()
+                    if tag_name != '':
+                        query_result = query_result.filter(tags__name__icontains=tag_name)
+                    else:
+                        print('find all problems：', query_result.count())
+
+            problems_count = query_result.count()
+            problems_list = query_result[(page-1) * list_count: page * list_count].values()
+            # update response object
+            response_object['total_pages'] = problems_count // list_count + 1
+            response_object['current_page'] = page
+            response_object['problems'] = GetProblemsSerializer(problems_list, many=True).data
+            return self.success(response_object)
+        except Exception as exception:
+            return self.error(err=exception.args, msg=str(exception))
+
 
 class CreateLabAPI(APIView):
     response_class = JSONResponse
@@ -117,6 +159,7 @@ class GetLabsAPI(APIView):
             return self.success(response_object)
         except Exception as exception:
             return self.error(err=exception.args, msg=str(exception))
+
 
 class DeleteLabAPI(APIView):
     def post(self, request):

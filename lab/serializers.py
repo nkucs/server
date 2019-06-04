@@ -2,8 +2,15 @@ from datetime import datetime, timezone, timedelta
 from rest_framework import serializers
 
 from user.models import Student
+from problem.models import Problem
 from .models import Lab, LabProblem, LabSubmission, Attachment
 from course.models import CourseResource
+
+
+class GetProblemsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Problem
+        fields =  '__all__'
 
 
 class LabSerializers(serializers.ModelSerializer):
