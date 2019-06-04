@@ -11,10 +11,10 @@ import datetime
 
 def get_course_info(course):
     course_info = dict()
-    course_info['course_id'] = course.code
+    course_info['courseCode'] = course.code
     course_info['name'] = course.name
-    course_info['start_time'] = course.start_time
-    course_info['end_time'] = course.end_time
+    course_info['startTime'] = course.start_time
+    course_info['endTime'] = course.end_time
     course_info['description'] = course.description
     teachers = course.teachers.objects.all()
     teacher_name_list = list()
@@ -23,16 +23,16 @@ def get_course_info(course):
     course_info['teachers'] = teacher_name_list
     return course_info
 
-def select_course_by_teacher(teacher):
+def select_course_by_teacher_name(teacher_name):
     course_list = set()
-    teacher_courses = CourseTeacher.objects.filter(teacher__icontains=teacher)
-    for teacher_course in teacher_courses:
-        course_list.add(teacher_course.course)
+    teacher_name_courses = CourseTeacher.objects.filter(teacher__user__name__icontains=teacher_name)
+    for teacher_name_course in teacher_name_courses:
+        course_list.add(teacher_name_course.course)
     return course_list
 
-def select_course_by_name(name):
+def select_course_by_course_name(course_name):
     course_list = set()
-    courses = Course.objects.filter(name__icontains=name)
+    courses = Course.objects.filter(name__icontains=course_name)
     for course in courses:
         course_list.add(course)
     return course_list
@@ -49,7 +49,7 @@ class GetNowCourseAPI(APIView):
     response_class = JSONResponse
     def get(self, request):
         response = dict()
-        teacher_number = request.GET.get('teacherId')
+        teacher_number = request.GET.get('teacherNumber')
         try:
             teacher = Teacher.objects.get(teacher_number=teacher_number)
             courses_teacher = CourseTeacher.objects.filter(teacher=teacher, course__start_time__lt=datetime.date.today(), course__end_time__gt=datetime.date.today())
@@ -68,16 +68,16 @@ class GetAllCourseAPI(APIView):
         response = dict()
         page_length = request.GET.get('pageLength')
         page = request.GET.get('page')
-        teacher = request.GET.get('teacher')
-        name = request.GET.get('name')
+        teacher_name = request.GET.get('teacher')
+        course_name = request.GET.get('name')
         try:
             courses = get_course_all()
-            if teacher != None:
-                course_list_by_teacher = select_course_by_teacher(teacher)
-                courses = courses.intersection(course_list_by_teacher)
-            if name != None:
-                course_list_by_name = select_course_by_name(name)
-                courses = courses.intersection(course_list_by_name)
+            if teacher_name != None:
+                course_list_by_teacher_name = select_course_by_teacher_name(teacher_name)
+                courses = courses.intersection(course_list_by_teacher_name)
+            if course_name != None:
+                course_list_by_course_name = select_course_by_course_name(course_name)
+                courses = courses.intersection(course_list_by_course_name)
             courses = list(courses)
             paginator = Paginator(courses, page_length)
             try:
@@ -92,8 +92,8 @@ class GetAllCourseAPI(APIView):
             response['totalPages'] = paginator.num_pages
             courses_info = list()
             for course in courses:
-                courses_info.push(course)
-            response['courses'] = courses_info
+                courses_info.push(get_course_info(course))
+            response['courseList'] = courses_info
             return self.success(response)
         except Exception as e:
             return self.error(msg=str(e), err=e.args)
@@ -102,7 +102,7 @@ class GetAllCourseAPI(APIView):
 class GetMyCourseAPI(APIView):
     response_class = JSONResponse
     def get(self, request):
-        esponse = dict()
+        response = dict()
         teacher_number = request.GET.get('teacherNumber')
         page_length = request.GET.get('pageLength')
         page = request.GET.get('page')
@@ -125,8 +125,8 @@ class GetMyCourseAPI(APIView):
                 courses.append(course.course)
             courses_info = list()
             for course in courses:
-                courses_info.push(course)
-            response['courses'] = courses_info
+                courses_info.push(get_course_info(course))
+            response['courseList'] = courses_info
             return self.success(response)
         except Exception as e:
             return self.error(msg=str(e), err=e.args)
@@ -172,6 +172,8 @@ class AddCourseAPI(APIView):
     response_class = JSONResponse
     def post(self, request):
         try:
+            teacher_number = request.GET.get('teacherNumber')
+            teacher = Teacher.objects.filter(teacher_number=teacher_number)
             name = request.POST.get('name')
             start_time = request.POST.get('startTime')
             end_time = request.POST.get('endTime')
@@ -183,6 +185,11 @@ class AddCourseAPI(APIView):
                 description = description,
             )
             course.save()
+            course_teacher = CourseTeacher.objects.create(
+                teacher = teacher,
+                course = course,
+            )
+            course_teacher.save()
             return self.success(0)
         except Exception as exception:
             return self.error(err=exception.args, msg=str(exception))
@@ -192,13 +199,11 @@ class UpdateAPI(APIView):
     response_class = JSONResponse
     def post(self, request):
         try:
-            teacher_number = request.POST.get('teacherNumber')
             course_code = request.POST.get('courseCode')
             name = request.POST.get('name')
             start_time = request.POST.get('startTime')
             end_time = request.POST.get('endTime')
             description = request.POST.get('description')
-            teacher = Teacher.objects.filter(teacher_number=teacher_number)
             course = Course.objects.filter(code=course_code).update(name=name, start_time=start_time, end_time=end_time, description=description)
             return self.success(0)
         except Exception as exception:
