@@ -2,7 +2,6 @@ import datetime
 import math
 import time
 
-import numpy as np
 import pytz
 from django.db.models import Q
 from django.http import HttpResponse, JsonResponse
@@ -15,6 +14,7 @@ from utils.api import APIView, JSONResponse
 
 from ..models import CaseStatus, ProblemSubmission, ProblemSubmissionCase
 from ..serializers import ProblemSubmissionSerializers1
+from user.models import Student
 
 
 class GetSubmissionStatAPI(APIView):
@@ -48,16 +48,15 @@ class GetWordCloud(APIView):
         courses = Course.objects.get(id=course_id)
         lectures = Lecture.objects.get(course=courses)
         problems = lectures.problems.all()
-        # problems = ProblemSubmission.objects.all().values('id')
-        status_obj = ProblemSubmission.objects.filter()
-        status_list = self.get_status(status_obj)
 
         j = 0
         tags_dict_ac = dict()
         tags_dict_not_ac = dict()
         for p_id in problems:
+            status_obj = ProblemSubmission.objects.filter(problem_id=p_id.id)
+            status_list = judge_AC(status_obj[0].submission_status)
             tags_list = get_tags(p_id.id)
-            if status_list[j]:
+            if status_list:
                 for tag in tags_list:
                     if tag not in tags_dict_ac.keys():
                         tags_dict_ac[tag] = 0
@@ -84,31 +83,17 @@ class GetWordCloud(APIView):
         words = [wordcloud_data_ac, wordcloud_data_not_ac]
         return JsonResponse(words, status=status.HTTP_200_OK, safe=False)
 
-    def get_status(self, status_obj):
-        status_list = []
-        for st in status_obj:
-            flag = True
-            cases = st.submission_status.name
-            for seq in cases:
-                if seq == '0':
-                    flag = False
-                    break
-            status_list.append(flag)
-        return status_list
-
 
 def judge_AC(case_status):
     """判断CaseStatus_id对应的测试案例通过情况"""
-    status_list = case_status.name
-    for status in status_list:
-        if status is '0':
-            return False
+    status = case_status.name
+    if status is 'accept':
+        return False
     return True
 
 
 def get_submission_count_by_day(required_submissions):
-    day_count = {'total': np.zeros(12), 'AC': np.zeros(
-        12), 'not_AC': np.zeros(12)}
+    day_count = {'total': [0]*12, 'AC': [0]*12, 'not_AC': [0]*12}
     now = datetime.datetime.now()
     zero_today = now - datetime.timedelta(
         hours=now.hour, minutes=now.minute, seconds=now.second, microseconds=now.microsecond)
@@ -150,8 +135,7 @@ def get_submission_count_by_week(required_submissions):
 
 
 def get_submission_count_by_month(required_submissions):
-    month_count = {'total': np.zeros(
-        12), 'AC': np.zeros(12), 'not_AC': np.zeros(12)}
+    month_count = {'total': [0]*12, 'AC': [0]*12, 'not_AC': [0]*12}
     now = datetime.datetime.now()
     print(now.year)
     zero_start = datetime.datetime(
@@ -237,7 +221,7 @@ class GetSubmissionTags(APIView):
                     problem_submission_id=submission.id):
                 submissionCases.append(rel)
 
-        Case1 = CaseStatus.objects.get(name="通过")
+        Case1 = CaseStatus.objects.get(name="accept")
 
         response['ans'] = []
         tags_name = []
@@ -305,15 +289,14 @@ class GetSubmissionInfoAPI(APIView):
 
 
 class GetSubmissionDistributionAPI(APIView):
-    def get(self, request):
-        print(request)
-        if 'start_date' not in request.GET or \
-           'end_date' not in request.GET or \
-           'student_id' not in request.GET:
+    def post(self, request):
+        if 'start_date' not in request.data or \
+           'end_date' not in request.data or \
+           'student_id' not in request.data:
             return HttpResponse(status=status.HTTP_404_NOT_FOUND)
-        student_id = request.GET['student_id']
-        start_time = request.GET['start_date']
-        end_time = request.GET['end_date']
+        student_id = request.data['student_id']
+        start_time = request.data['start_date']
+        end_time = request.data['end_date']
         start_time = datetime.datetime.strptime(start_time, "%Y-%m-%d")
         end_time = datetime.datetime.strptime(end_time, "%Y-%m-%d")
         submission = ProblemSubmission.objects.filter(
@@ -323,14 +306,14 @@ class GetSubmissionDistributionAPI(APIView):
         for i in range(0, 22, 2):
             subm = submission.filter(
                 created_at__time__range=[datetime.time(i), datetime.time(i+2)])
-            counts.append((subm.count(), subm.filter(submission_status=0).count()))
+            counts.append((subm.count(), subm.filter(submission_status=2).count()))
         temp = {}
         temp['ans'] = []
         for i, c in enumerate(counts):
             t = {}
             t["时间段"] = f"{i*2}:00-{(i+1)*2}:00"
-            t["提交数"] = counts[i][0]
-            t["AC数"] = counts[i][1]
+            t["提交数"] = c[0]
+            t["AC数"] = c[1]
             temp['ans'].append(t)
         return JsonResponse(temp, status=status.HTTP_200_OK)
 
@@ -338,21 +321,66 @@ class GetSubmissionDistributionAPI(APIView):
 class GetACSubmissionRuntimes(APIView):
     def get(self, request):
         problem_id = request.GET.get('problem_id')
-        problemSubmission = ProblemSubmission.objects.filter(problem=problem_id).order_by('runtime')
+        problemSubmission = ProblemSubmission.objects.filter(
+            problem=problem_id, submission_status=2).order_by('runtime')
+        # submission_status=2 -> AC
         num = problemSubmission.count()
         if (problemSubmission.count() < 1):
             return HttpResponse(status=status.HTTP_404_NOT_FOUND)
         maxtime = problemSubmission.last().runtime
         interval = math.ceil(maxtime/10)
-        # i = 0
         data = []
-
         for i in range(0, maxtime, interval):
             count = problemSubmission.filter(
-                runtime__range=(i, i+interval)).count()
+                runtime__range=(i, i+interval-0.01)).count()
             data.append(count/num)
         send = {'interval': interval, 'data': data}
-        return JsonResponse(send, status=status.HTTP_200_oK)
+        return JsonResponse(send, status=status.HTTP_200_OK)
+
+
+class CaseTagStatisticsView(APIView):
+
+    def post(self, request):
+        student_id = request.data['student_id']
+        my_status = request.data['status']
+        try:
+            student = Student.objects.get(student_number=student_id)
+        except Student.DoesNotExist:
+            return HttpResponse(status=status.HTTP_404_NOT_FOUND)
+        problems = ProblemSubmission.objects.filter(student=student)
+        problem_cases_row = []
+        for problem in problems:
+            for res in ProblemSubmissionCase.objects.filter(problem_submission=problem):
+                problem_cases_row.append(res)
+        problem_cases = []
+        if my_status == 2:
+            for c in problem_cases_row:
+                if c.case_status.name == 'accept':
+                    problem_cases.append(c)
+        else:
+            for c in problem_cases_row:
+                if c.case_status.name != 'accept':
+                    problem_cases.append(c)
+        tags = []
+        tags.append({
+            '标签名称': '',
+            '数量': 0
+        })
+        for c in problem_cases:
+            for tag in c.case.tags.all():
+                flag = 0
+                for t in tags:
+                    if t['标签名称'] == tag.name:
+                        flag = 1
+                        t['数量'] += 1
+                        break
+                if flag == 0:
+                    tags.append({
+                        '标签名称': tag.name,
+                        '数量': 1
+                    })
+        tags.pop(0)
+        return JsonResponse(tags, safe=False)
 
 
 class GetProblemSubmissionCountAPI(APIView):
@@ -361,7 +389,7 @@ class GetProblemSubmissionCountAPI(APIView):
     def get(self, request):
         date_range = request.GET.get('date_range')
         problem_id = request.GET.get('problem_id')
-        required_submissions = ProblemSubmission.objects.filter(problem=problem_id).order_by('runtime')
+        required_submissions = ProblemSubmission.objects.filter(problem=problem_id)
         if date_range == 'day':
             day_count = get_submission_count_by_day(required_submissions)
             return self.success(day_count)
@@ -390,7 +418,7 @@ class GetProblemSubmissionTags(APIView):
                     problem_submission_id=submission.id):
                 submissionCases.append(rel)
 
-        Case1 = CaseStatus.objects.get(name="通过")
+        Case1 = CaseStatus.objects.get(name="accept")
 
         response['ans'] = []
         tags_name = []
