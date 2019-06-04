@@ -6,11 +6,15 @@ from django.forms import model_to_dict
 
 
 class GetAllCourseAPI(APIView):
+    #OK#
     def get(self, request):
         AllCourse = Course.objects.all()
         AllCourseResult = []
-        AllCourseResult.append(model_to_dict(AllCourse[0]))
-        AllCourseResult.append(model_to_dict(AllCourse[1]))
+        for item in AllCourse:
+            item_result = model_to_dict(item)
+            del item_result['students']
+            del item_result['teachers']
+            AllCourseResult.append(item_result)
         return self.success(AllCourseResult)
         
 
