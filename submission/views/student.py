@@ -20,6 +20,7 @@ class GetAllStudentSubmissionAPI(APIView): # 获取一个学生的所有提交�
         for item in student_submission:
             item_result = model_to_dict(item)
             del item_result['cases']
+            item_result['create_at'] = str(item.created_at)
             item_result['status'] = caseStatusDemo[int(item_result['submission_status'])]['name']
             student_submission_result.append(item_result)
         return self.success(student_submission_result)
