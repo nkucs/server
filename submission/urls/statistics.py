@@ -3,7 +3,8 @@ from django.conf.urls import url
 from ..views.statistics import (
     GetACSubmissionRuntimes, GetSubmissionCountAPI, CaseTagStatisticsView,
     GetSubmissionDistributionAPI, GetSubmissionInfoAPI, GetSubmissionStatAPI,
-    GetSubmissionTags, GetWordCloud)
+    GetSubmissionTags, GetWordCloud,
+    GetProblemSubmissionTags, GetProblemSubmissionCountAPI)
 
 urlpatterns = [
     url(r"^get_submission_stat/?$", GetSubmissionStatAPI.as_view(),
@@ -21,4 +22,8 @@ urlpatterns = [
         name="get-runtime-ratio"),
     url(r"get-tags-statistics/?$", CaseTagStatisticsView.as_view(),
         name="get-tags-statistics"),
+    url(r"get_problem_submission_tag/?$", GetProblemSubmissionTags.as_view(),
+        name="get_problem_submission_tag"),
+    url(r"get_problem_submission_count/?$", GetProblemSubmissionCountAPI.as_view(),
+        name="get_problem_submission_count"),
 ]
