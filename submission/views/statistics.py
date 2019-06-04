@@ -289,15 +289,14 @@ class GetSubmissionInfoAPI(APIView):
 
 
 class GetSubmissionDistributionAPI(APIView):
-    def get(self, request):
-        print(request)
-        if 'start_date' not in request.GET or \
-           'end_date' not in request.GET or \
-           'student_id' not in request.GET:
+    def post(self, request):
+        if 'start_date' not in request.data or \
+           'end_date' not in request.data or \
+           'student_id' not in request.data:
             return HttpResponse(status=status.HTTP_404_NOT_FOUND)
-        student_id = request.GET['student_id']
-        start_time = request.GET['start_date']
-        end_time = request.GET['end_date']
+        student_id = request.data['student_id']
+        start_time = request.data['start_date']
+        end_time = request.data['end_date']
         start_time = datetime.datetime.strptime(start_time, "%Y-%m-%d")
         end_time = datetime.datetime.strptime(end_time, "%Y-%m-%d")
         submission = ProblemSubmission.objects.filter(
@@ -307,14 +306,14 @@ class GetSubmissionDistributionAPI(APIView):
         for i in range(0, 22, 2):
             subm = submission.filter(
                 created_at__time__range=[datetime.time(i), datetime.time(i+2)])
-            counts.append((subm.count(), subm.filter(submission_status=0).count()))
+            counts.append((subm.count(), subm.filter(submission_status=2).count()))
         temp = {}
         temp['ans'] = []
         for i, c in enumerate(counts):
             t = {}
             t["时间段"] = f"{i*2}:00-{(i+1)*2}:00"
-            t["提交数"] = counts[i][0]
-            t["AC数"] = counts[i][1]
+            t["提交数"] = c[0]
+            t["AC数"] = c[1]
             temp['ans'].append(t)
         return JsonResponse(temp, status=status.HTTP_200_OK)
 
@@ -322,21 +321,21 @@ class GetSubmissionDistributionAPI(APIView):
 class GetACSubmissionRuntimes(APIView):
     def get(self, request):
         problem_id = request.GET.get('problem_id')
-        problemSubmission = ProblemSubmission.objects.filter(problem=problem_id).order_by('runtime')
+        problemSubmission = ProblemSubmission.objects.filter(
+            problem=problem_id, submission_status=2).order_by('runtime')
+        # submission_status=2 -> AC
         num = problemSubmission.count()
         if (problemSubmission.count() < 1):
             return HttpResponse(status=status.HTTP_404_NOT_FOUND)
         maxtime = problemSubmission.last().runtime
         interval = math.ceil(maxtime/10)
-        # i = 0
         data = []
-
         for i in range(0, maxtime, interval):
             count = problemSubmission.filter(
-                runtime__range=(i, i+interval)).count()
+                runtime__range=(i, i+interval-0.01)).count()
             data.append(count/num)
         send = {'interval': interval, 'data': data}
-        return JsonResponse(send, status=status.HTTP_200_oK)
+        return JsonResponse(send, status=status.HTTP_200_OK)
 
 
 class CaseTagStatisticsView(APIView):
@@ -354,13 +353,13 @@ class CaseTagStatisticsView(APIView):
             for res in ProblemSubmissionCase.objects.filter(problem_submission=problem):
                 problem_cases_row.append(res)
         problem_cases = []
-        if my_status == '通过':
+        if my_status == 2:
             for c in problem_cases_row:
-                if c.case_status.name == 'AC':
+                if c.case_status.name == 'accept':
                     problem_cases.append(c)
         else:
             for c in problem_cases_row:
-                if c.case_status.name != 'AC':
+                if c.case_status.name != 'accept':
                     problem_cases.append(c)
         tags = []
         tags.append({
@@ -368,7 +367,7 @@ class CaseTagStatisticsView(APIView):
             '数量': 0
         })
         for c in problem_cases:
-            for tag in c.case.tags:
+            for tag in c.case.tags.all():
                 flag = 0
                 for t in tags:
                     if t['标签名称'] == tag.name:
@@ -381,4 +380,4 @@ class CaseTagStatisticsView(APIView):
                         '数量': 1
                     })
         tags.pop(0)
-        return JsonResponse(tags, status=status.HTTP_200_oK)
+        return JsonResponse(tags, safe=False)
