@@ -2,7 +2,7 @@ from course.models import Course, CourseResource
 from problem.models import Problem
 from utils.api import APIView, JSONResponse, FILEResponse
 from ..serializers import LabSerializers, GetLabSerializer, GetProblemsSerializer
-from ..models import Lab
+from ..models import Lab, LabProblem
 import datetime
 
 
@@ -27,16 +27,20 @@ class FilterProblemsAPI(APIView):
                 query_result = Problem.objects.filter(name__icontains=problem_name)\
                     .filter(tags__name__icontains=tag_name)\
                     .filter(teacher__user__name__icontains=teacher_name)
-            all_teacher_name_list = list()
+            teacher_name_list = list()
+            tag_name_list = list()
             for prob in query_result:
-                print(prob)
-                all_teacher_name_list.append(prob.teacher.user.name)
+                teacher_name_list.append(prob.teacher.user.name)
+                tag_name_list.append([tag.name for tag in prob.tags.all()])
+
             problems_count = query_result.count()
             problems_list = query_result[(page-1) * list_count: page * list_count]
-            current_teacher_name_list = all_teacher_name_list[(page-1) * list_count: page * list_count]
+            teacher_name_list = teacher_name_list[(page-1) * list_count: page * list_count]
+            tag_name_list = tag_name_list[(page-1) * list_count: page * list_count]
             response_object['total_pages'] = problems_count // list_count + 1
             response_object['current_page'] = page
-            response_object['teacher_names'] = current_teacher_name_list
+            response_object['teacher_names'] = teacher_name_list
+            response_object['tag_names'] = tag_name_list
             response_object['problems'] = GetProblemsSerializer(problems_list, many=True).data
             return self.success(response_object)
         except Exception as exception:
@@ -57,6 +61,7 @@ class CreateLabAPI(APIView):
             attachment_weight = int(request.data['attachment_weight'])
             report_required = request.data['report_required']
             problems = request.data['problems']
+            problems_code_list = [pro['id'] for pro in problems]
 
             if report_required == 'y':
                 report_required = True
@@ -84,7 +89,22 @@ class CreateLabAPI(APIView):
             )
             print(lab)
             response_object['lab_id'] = lab.id
-            return self.success(response_object)
+
+            # 然后为每个练习题建立一个 lab_problem 的条目
+            try:
+                lab_problems =  LabProblem.objects.all()
+                print(lab_problems.values())
+
+                for code in problems_code_list:
+                    problem = Problem.objects.get(code=code)
+                    lab_problem = LabProblem.objects.create(
+                        lab=lab,
+                        problem=problem,
+                        weight=100-attachment_weight,
+                        language=63)
+                return self.success(response_object)
+            except Exception as exception:
+                return self.error(err=exception, msg=str(exception))
         except Exception as exception:
             return self.error(err=exception, msg=str(exception))
 
