@@ -1,23 +1,20 @@
 from utils.api import APIView, JSONResponse
 from rest_framework import status
 from django.http import HttpResponse, JsonResponse
-from course.models import CourseStudent, Course
+from course.models import Course
 import math
 from django.contrib.auth.models import Group
 from django.db.models import Model
 from utils.api import APIView, JSONResponse
 from ..models import Student,UserStatus,Gender,User
+from django.forms import model_to_dict
 
-def GetStudentAPI(APIView):
+class GetStudentAPI(APIView):
     def get(self, request):
-        # get information from frontend
+        # get information from frontend #OK#
         id_student = int(request.GET.get('id_student'))
-        try:
-            NowStudent = Student.objects.get(id=id_student) 
-        except NowStudent.DoesNotExist:
-            return HttpResponse(status=404)
-        serializer = ProblemSubmissionSerializers1(NowStudent)
-        return JsonResponse(serializer.data,status=status.HTTP_200_OK)
+        NowStudent = Student.objects.get(id=id_student) 
+        return self.success(model_to_dict(NowStudent))
 
 def LoginStudentAPI(APIView):
     # Login API

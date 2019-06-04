@@ -4,31 +4,32 @@ from ..serializers import ProblemSubmissionSerializers1
 from django.http import HttpResponse, JsonResponse
 from submission.models import ProblemSubmission
 from lab.models import LabSubmission,Attachment
+from django.forms import model_to_dict
 
-class GetAllSubmissionAPI(APIView): # 获取一个学生的所有提交记录
+
+class GetAllStudentSubmissionAPI(APIView): # 获取一个学生的所有提交记录 #OK#
     def get(self, request):
-        # submission_student_id = int(request.GET.get('submission_student_id'))
-        # query from database for submissions of student
-        # id_student=submission_student_id
-        # try:
-        print("@@@@@@@@@@@@@@@@")
-        UserPersonalSubmission = str(ProblemSubmission.objects.count())
-        # except UserPersonalSubmission.DoesNotExist:
-        #     return HttpResponse(status=404)
-        serializer = ProblemSubmissionSerializers1(UserPersonalSubmission)
-        return JsonResponse(serializer.data,status=status.HTTP_200_OK)
+        submission_student_id = int(request.GET.get('student_id'))
+        student_submission = ProblemSubmission.objects.filter(student=submission_student_id)
+        student_submission_result = []
+        for item in student_submission:
+            item_result = model_to_dict(item)
+            del item_result['cases']
+            student_submission_result.append(item_result)
+        return self.success(student_submission_result)
 
 class GetUserSubmissionAPI(APIView): #  获取一个学生关于一道题目的提交记录
     def get(self, request):
-        submission_student_id = int(request.GET.get('submission_student_id'))
-        submission_problem_id = int(request.GET.get('submission_problem_id'))
+        submission_student_id = int(request.GET.get('student_id'))
+        submission_problem_id = int(request.GET.get('problem_id'))
         # query from database for submissions of student and problem 
-        try:
-            UserPersonalSubmission = ProblemSubmission.objects.filter(id_student=submission_student_id, id_problem=submission_problem_id)
-        except ProblemSubmission.DoesNotExist:
-            return HttpResponse(status=404)
-        serializer = ProblemSubmissionSerializers1(ProblemSubmission)
-        return JsonResponse(serializer.data,status=status.HTTP_200_OK)
+        userPersonalSubmission = ProblemSubmission.objects.filter(student=submission_student_id, problem=submission_problem_id)
+        userPersonalSubmissionResult = []
+        for item in userPersonalSubmission:
+            item_result = model_to_dict(item)
+            del item_result['cases']
+            userPersonalSubmissionResult.append(item_result)
+        return self.success(userPersonalSubmissionResult)
 
 class AddLabAttachmentAPI(APIView):
     # create submission of a lab
