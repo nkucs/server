@@ -96,7 +96,6 @@ class CreateStaffAPI(APIView):
         try:
            
             name = request.data.get('name')
-            print(name)
             username = request.data.get('account')
             teacher_number = request.data.get('teacher_number')
             gender = request.data.get('gender')
