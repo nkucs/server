@@ -27,11 +27,11 @@ class LabDetailAPI(APIView):
     def get(self, request):
         id_lab = request.GET.get('id_lab')
         if id_lab:
-            # try:
-            lab = Lab.objects.get(id=id_lab)
-            return self.success(GetLabDetailSerializer(lab).data)
-            # except:
-            #     return self.error(msg="不存在该实验", err=400)
+            try:
+                lab = Lab.objects.get(id=id_lab)
+                return self.success(GetLabDetailSerializer(lab).data)
+            except:
+                return self.error(msg="不存在该实验", err=400)
         else:
             return self.error(msg="参数错误", err=400)
 

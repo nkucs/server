@@ -25,7 +25,7 @@ class Lab(models.Model):
 class LabProblem(models.Model):
     """实验课编程题联系表"""
 
-    lab = models.ForeignKey(Lab, on_delete=models.CASCADE)
+    lab = models.ForeignKey(Lab, related_name="problem", on_delete=models.CASCADE)
     problem = models.ForeignKey(Problem, on_delete=models.CASCADE)
     weight = models.IntegerField()
     language = models.IntegerField()
