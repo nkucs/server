@@ -87,6 +87,7 @@ class CreateLabAPI(APIView):
         response_object = dict()
         # get information from frontend
         try:
+            print(request.data, end='\n\n\n\n')
             course_id = int(request.data['course_id'])
             name = request.data['name']
             description = request.data['description']
@@ -106,6 +107,7 @@ class CreateLabAPI(APIView):
             end_time = datetime.datetime.strptime(end_time, '%Y-%m-%d %H:%M:%S')
 
         except Exception as exception:
+            print('in the first excption', end='\n\n\n\n')
             return self.error(err=exception.args, msg="course_id:%s, name:%s, description:%s\n"%
                 (request.POST.get('course_id'), request.POST.get('name'), request.POST.get('description')))
 
@@ -210,6 +212,7 @@ class GetLabsAPI(APIView):
         # initialize the response object
         response_object = dict()
         # get information from frontend
+        print(request.GET.get('course_id'), end='\n\n\n\n')
         try:
             course_id = int(request.GET.get('course_id'))
             page = int(request.GET.get('page'))
@@ -219,12 +222,12 @@ class GetLabsAPI(APIView):
         try:
             # query from database
             labs_number = Lab.objects.filter(course=course_id).count()
-            labs_list = Lab.objects.filter(course=course_id)[(page - 1) * list_count : page * list_count].values('id', 'name')
+            labs_list = Lab.objects.filter(course=course_id)[(page - 1) * list_count : page * list_count].values('id', 'name', 'start_time', 'end_time')
             # update response object
             response_object['total_pages'] = labs_number // list_count + 1
             response_object['current_page'] = page
             response_object['labs'] = LabSerializers(labs_list, many=True).data
-
+            print(response_object['labs'], end='\n\n\n\n')
             return self.success(response_object)
         except Exception as exception:
             return self.error(err=exception.args, msg=str(exception))

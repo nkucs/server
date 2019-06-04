@@ -1,3 +1,4 @@
+from datetime import datetime, timezone, timedelta
 from rest_framework import serializers
 
 from user.models import Student
@@ -20,13 +21,24 @@ class GetLabProblemsSerializer(serializers.ModelSerializer):
 
 class LabSerializers(serializers.ModelSerializer):
     lab_id = serializers.SerializerMethodField()
-
+    start_time = serializers.SerializerMethodField()
+    end_time = serializers.SerializerMethodField()
     class Meta:
         model = Lab
-        fields = ('lab_id', 'name')
+        fields = ('lab_id', 'name', 'start_time', 'end_time')
 
     def get_lab_id(self, obj):
         return obj['id']
+    
+    def get_start_time(self, obj):
+        temp = obj['start_time'].astimezone(timezone(timedelta(hours=8)))
+        return_datatime = datetime.strftime(temp,'%Y-%m-%d %H:%M:%S')
+        return (return_datatime)
+    
+    def get_end_time(self, obj):
+        temp = obj['end_time'].astimezone(timezone(timedelta(hours=8)))
+        return_datatime = datetime.strftime(temp,'%Y-%m-%d %H:%M:%S')
+        return (return_datatime)
 
 
 class GetLabFileSerializer(serializers.ModelSerializer):
