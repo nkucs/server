@@ -62,8 +62,20 @@ class GetProblemsAPI(APIView):
                               msg="lab_id:%s \n" % (request.GET.get('lab_id')))
         try:
             lab = Lab.objects.get(id=lab_id)
-            problems = LabProblem.objects.filter(lab=lab)
-            response_object['problems'] = GetLabProblemsSerializer(problems, many=True).data
+            lab_problems = LabProblem.objects.filter(lab=lab)
+            problems = []
+            for lp in lab_problems:
+                problems.append(lp.problem)
+
+            teacher_name_list = list()
+            tag_name_list = list()
+            for prob in problems:
+                teacher_name_list.append(prob.teacher.user.name)
+                tag_name_list.append([tag.name for tag in prob.tags.all()])
+
+            response_object['teacher_names'] = teacher_name_list
+            response_object['tag_names'] = tag_name_list
+            response_object['problems'] = GetProblemsSerializer(problems, many=True).data
             return self.success(response_object)
         except Exception as exception:
             return self.error(err=exception.args, msg=str(exception))
