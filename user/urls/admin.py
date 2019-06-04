@@ -1,6 +1,8 @@
 from django.conf.urls import url
-from user.views.admin import CreateRoleAPI, GetRoleAPI, GetRoleTeacherListAPI, GetRoleAddTeacherListAPI, RoleTeacherAddAPI, RoleTeacherDeleteAPI, CreateStudentAPI, GetStudentAPI, UpdateStudentAPI
-from user.views.admin import GetRoleListAPI, DeleteRoleAPI, ModifyRoleAPI
+from user.views.admin import CreateRoleAPI, GetRoleAPI, GetRoleTeacherListAPI,\
+        GetRoleAddTeacherListAPI, CreateStudentAPI,\
+        GetStudentAPI, UpdateStudentAPI, RoleTeacherAddAPI,\
+        RoleTeacherDeleteAPI, GetRoleListAPI, DeleteRoleAPI, ModifyRoleAPI
 
 urlpatterns = [
     url(r'create_role?$', CreateRoleAPI.as_view(), name="create_role"),
@@ -12,12 +14,7 @@ urlpatterns = [
     url(r'role-add-teacher-list/?$', GetRoleAddTeacherListAPI.as_view(), name="role-add-teacher-list"),
     url(r'role-teacher-add/?$', RoleTeacherAddAPI.as_view(), name="role-teacher-add"),
     url(r'role-teacher-delete/?$', RoleTeacherDeleteAPI.as_view(), name="role-teacher-delete"),
-
     url(r'student_create/?$', CreateStudentAPI.as_view(), name="student_create"),
     url(r'student_get/?$', GetStudentAPI.as_view(), name="student_get"),
     url(r'student_update/?$', UpdateStudentAPI.as_view(), name="student_update"),
-
-    # url(r'teacher_create/?$', CreateTeacherAPI.as_view(), name="teacher_create"),
-    # url(r'teacher_get/?$', GetTeacherAPI.as_view(), name="teacher_get"),
-    # url(r'teacher_update/?$', UpdateTeacherAPI.as_view(), name="teacher_update"),
 ]
