@@ -1,7 +1,7 @@
 from course.models import Course, CourseResource
 from problem.models import Problem
 from utils.api import APIView, JSONResponse, FILEResponse
-from ..serializers import LabSerializers, GetLabSerializer, GetProblemsSerializer
+from ..serializers import LabSerializers, GetLabSerializer, GetProblemsSerializer, GetLabProblemsSerializer
 from ..models import Lab, LabProblem
 import datetime
 
@@ -42,6 +42,28 @@ class FilterProblemsAPI(APIView):
             response_object['teacher_names'] = teacher_name_list
             response_object['tag_names'] = tag_name_list
             response_object['problems'] = GetProblemsSerializer(problems_list, many=True).data
+            return self.success(response_object)
+        except Exception as exception:
+            return self.error(err=exception.args, msg=str(exception))
+
+
+class GetProblemsAPI(APIView):
+    '''
+    根据实验id 获取与该实验关联的所有题目
+    GET 方法
+    '''
+    response_class = JSONResponse
+    def get(self, request):
+        response_object = dict()
+        try:
+            lab_id = int(request.GET.get('lab_id'))
+        except Exception as exception:
+            return self.error(err=exception.args,
+                              msg="lab_id:%s \n" % (request.GET.get('lab_id')))
+        try:
+            lab = Lab.objects.get(id=lab_id)
+            problems = LabProblem.objects.filter(lab=lab)
+            response_object['problems'] = GetLabProblemsSerializer(problems, many=True).data
             return self.success(response_object)
         except Exception as exception:
             return self.error(err=exception.args, msg=str(exception))
