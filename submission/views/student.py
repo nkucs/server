@@ -7,6 +7,24 @@ from lab.models import LabSubmission,Attachment
 from django.forms import model_to_dict
 import time; 
 
+class GetProblemSubmissionAPI(APIView): # 获取一个学生的所有提交记录 #OK#
+    def get(self, request):
+        submission_problem_id = int(request.GET.get('problem_id'))
+        problem_submission = ProblemSubmission.objects.filter(problem=submission_problem_id)
+        caseStatusResult = CaseStatus.objects.all()
+        caseStatusDemo = []
+        for item in caseStatusResult:
+            caseStatusDemo.append(model_to_dict(item))
+
+        problem_submission_result = []
+        for item in problem_submission:
+            item_result = model_to_dict(item)
+            del item_result['cases']
+            item_result['create_at'] = str(item.created_at)
+            item_result['status'] = caseStatusDemo[int(item_result['submission_status'])]['name']
+            problem_submission_result.append(item_result)
+        return self.success(problem_submission_result)
+
 class GetAllStudentSubmissionAPI(APIView): # 获取一个学生的所有提交记录 #OK#
     def get(self, request):
         submission_student_id = int(request.GET.get('student_id'))
