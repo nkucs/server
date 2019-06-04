@@ -389,7 +389,7 @@ class GetProblemSubmissionCountAPI(APIView):
     def get(self, request):
         date_range = request.GET.get('date_range')
         problem_id = request.GET.get('problem_id')
-        required_submissions = ProblemSubmission.objects.filter(problem=problem_id).order_by('runtime')
+        required_submissions = ProblemSubmission.objects.filter(problem=problem_id)
         if date_range == 'day':
             day_count = get_submission_count_by_day(required_submissions)
             return self.success(day_count)
@@ -418,7 +418,7 @@ class GetProblemSubmissionTags(APIView):
                     problem_submission_id=submission.id):
                 submissionCases.append(rel)
 
-        Case1 = CaseStatus.objects.get(name="通过")
+        Case1 = CaseStatus.objects.get(name="accept")
 
         response['ans'] = []
         tags_name = []
