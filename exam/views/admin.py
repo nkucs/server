@@ -8,6 +8,7 @@ from course.models import Course
 from user.models import Student
 from user.models import User
 from django.core.paginator import Paginator
+import random
 
 def hash(key):
     key += ~(key << 15)
@@ -25,7 +26,6 @@ class GetExamStudentAPI(APIView):
         student_number = request.GET.get('student_number')
         page_index = request.GET.get('page_index')
         page_length = request.GET.get('page_length')
-        print(page_length)
         studentexams = StudentExam.objects.filter(exam_id=exam_id, student__student_number__icontains=student_number,
                                                   student__user__name__icontains=student_name)
         p = Paginator(studentexams, page_length)
@@ -77,109 +77,12 @@ class GetAllStudentAPI(APIView):
             'students': results
         })
 
-
-# class GetIdStudentAPI(APIView):
-#     def get(self, request):
-#         student_id = request.GET.get('id')
-#         exam_id = request.GET.get('exam')
-#         if not student_id:
-#             return self.error(msg=f"student_id key is None", err=request.GET)
-#         try:
-#             # query for the lecture
-#             student = Student.objects.get(id=student_id)
-#             exam = Exam.objects.get(id=exam_id)
-#             stu = StudentExam.objects.get(exam=exam, student=student)
-#             stu_list = []
-#             stu_list.append(
-#                 {
-#                     'student_number': stu.student.student_number,
-#                     'name': stu.student.user.name,
-#                     'type': stu.type,
-#                     'grade': stu.grade,
-#                     'password': stu.password,
-#                 }
-#             )
-#             return self.success(stu_list)
-#         except Exception as e:
-#             # not found
-#             return self.error(msg=str(e), err=e.args)
-
-
-# class GetNameStudentAPI(APIView):
-#     def get(self, request):
-#         student_name = request.GET.get('name')
-#         exam_id = request.GET.get('exam_id')
-#         if not student_name:
-#             #not found
-#             return self.error(msg=f"student_name key is None", err=request.GET)
-#         try:
-#             # query for the lecture
-#             students = User.objects.fliter(name=student_name)
-#             exam = Exam.objects.get(id=exam_id)
-#             stu_list = []
-#             for student in students:
-#                 stu = StudentExam.objects.get(exam=exam, student=student)
-#                 stu_list.append(
-#                     {
-#                         'student_number': stu.student.student_number,
-#                         'name': stu.student.user.name,
-#                         'type': stu.type,
-#                         'grade': stu.grade,
-#                         'password': stu.password,
-#                     }
-#                 )
-#             return self.success(stu_list)
-#         except Exception as e:
-#             # not found
-#             return self.error(msg=str(e), err=e.args)
-
-
-# class GetIdStuAllAPI(APIView):
-#     def get(self, request):
-#         student_id = request.GET.get('id')
-#         stu_list = []
-#         if not student_id:
-#                 #not found
-#             return self.error(msg=f"student_id key is None", err=request.GET)
-#         try:
-#             # query for the lecture
-#             student = Student.objects.get(id=student_id)
-#             stu_list.append(
-#                 {
-#                     'student_number': student.student_number,
-#                     'name': student.user.name,
-#                     'room': student.room,
-#                 }
-#             )
-#             return self.success(stu_list)
-#         except Exception as e:
-#             # not found
-#             return self.error(msg=str(e), err=e.args)
-
-
-# class GetNameStuAllAPI(APIView):
-#     def get(self, request):
-#         student_name = request.data.get('name')
-#         if not student_name:
-#             #not found
-#             return self.error(msg=f"student_name key is None", err=request.GET)
-#         try:
-#             # query for the lecture
-#             students = User.objects.fliter(name=student_name)
-#             stu_list = []
-#             for student in students:
-#                 stu_list.append(
-#                     {
-#                         'student_number': student.student_number,
-#                         'name': student.user.name,
-#                         'room': student.room,
-#                     }
-#                 )
-#             return self.success(stu_list)
-#         except Exception as e:
-#             # not found
-#             return self.error(msg=str(e), err=e.args)
-
+def getrandompassword(number):
+    x = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+    result = ""
+    for i in range(number):
+        result += x[random.randint(0, len(x) - 1)]
+    return result
 
 class AddStudentAPI(APIView):
     def post(self, request):
@@ -187,7 +90,6 @@ class AddStudentAPI(APIView):
         number = request.data.get('number')
         num = len(number)
         exam = Exam.objects.get(id=exam_id)
-        print(num)
         try:
             for i in range(num):
                 stu = Student.objects.get(student_number=number[i])
@@ -196,7 +98,7 @@ class AddStudentAPI(APIView):
                     exam=exam,
                     type=0,
                     grade=0,
-                    password=1,
+                    password=getrandompassword(10),
                     finished=0,
                 )
                 student.save()
@@ -247,10 +149,8 @@ class GetAllContentAPI(APIView):
         student_number = request.data.get('student_number')
         exam = Exam.objects.get(id=exam_id)
         stu_list = []
-        print(student_number)
         try:
             student = StudentExam.objects.filter(exam=exam, student__student_number__in=student_number)
-            print(student)
             for i in student:
                 stu_list.append({
                     'number': i.student.student_number,
