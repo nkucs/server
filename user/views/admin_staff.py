@@ -5,18 +5,53 @@ from ..serializers import TeacherSerializers, UserSerializers, AdminSerializers
 from ..models import Role, Permission, User, Student, Teacher, Admin, Gender, UserStatus
 
 
+def getRole(userId):
+    user = User.objects.get(id=userId)
+    groups = Group.objects.filter(user=user)
+    groupNames = []
+    for group in groups:
+        groupNames.append(group.name)
+    if len(groupNames) == 1:
+        return groupNames[0]
+    else:
+        name_string = ','.join(groupNames)
+        return name_string
+
+
+
 class GetStaffListAPI(APIView):
     """
-    获取staff信息
+    获取staff列表信息
     """
     def get(self, request):
-        admin = Admin.objects.all()
-        admin_serializers = AdminSerializers(admin, many=True)
-        teachers = Teacher.objects.all()
-        teachers_serializers = TeacherSerializers(teachers, many=True)
-        datalist = admin_serializers.data + teachers_serializers.data
-        print(datalist)
-        return self.success(datalist)
+        try:
+            stafflist = []
+            admins = Admin.objects.all()
+            for admin in admins:
+                adminDict = dict()
+                adminDict['key'] = admin.user.id
+                adminDict['number'] = admin.admin_number
+                adminDict['account'] = admin.user.username
+                adminDict['nickname'] = admin.user.name
+                adminDict['status'] = admin.user.user_status.name
+                adminDict['gender'] = admin.user.gender.name
+                adminDict['role'] = getRole(admin.user.id)
+                stafflist.append(adminDict)
+            teachers = Teacher.objects.all()
+            for teacher in teachers:
+                teacherDict = dict()
+                teacherDict['key'] = teacher.user.id
+                teacherDict['number'] = teacher.teacher_number
+                teacherDict['account'] = teacher.user.username
+                teacherDict['nickname'] = teacher.user.name
+                teacherDict['status'] = teacher.user.user_status.name
+                teacherDict['gender'] = teacher.user.gender.name
+                teacherDict['role'] = getRole(teacher.user.id)
+                stafflist.append(teacherDict)
+            stafflist.sort(key=lambda e: e.__getitem__('key'))
+            return self.success(stafflist)
+        except Exception as exception:
+            return self.error(err=exception.args)
 
 
 class GetStaffAPI(APIView):
@@ -24,10 +59,37 @@ class GetStaffAPI(APIView):
     获取某staff信息
     """
     def get(self, request):
-        admin_id = request.GET.get('id')
-        admin = Admin.objects.get(id=admin_id)
-        admin_serializers = AdminSerializers(admin)
-        return self.success(admin_serializers.data)
+        try:
+            id = request.GET.get('id')
+            role = request.GET.get('role')
+            staff_id = request.GET.get('staff')
+            role = role.split(',')
+            role = role[0]
+            if role.startswith('admin'):
+                admin = Admin.objects.get(admin_number=staff_id)
+                adminDict = dict()
+                adminDict['id'] = admin.user.id
+                adminDict['number'] = admin.admin_number
+                adminDict['account'] = admin.user.username
+                adminDict['nickname'] = admin.user.name
+                adminDict['status'] = admin.user.user_status.name
+                adminDict['gender'] = admin.user.gender.name
+                adminDict['role'] = getRole(admin.user.id)
+                return self.success(adminDict)             
+            else: 
+                teacher = Teacher.objects.get(teacher_number=staff_id)
+                teacherDict = dict()
+                teacherDict['id'] = teacher.user.id
+                teacherDict['number'] = teacher.teacher_number
+                teacherDict['account'] = teacher.user.username
+                teacherDict['nickname'] = teacher.user.name
+                teacherDict['status'] = teacher.user.user_status.name
+                teacherDict['gender'] = teacher.user.gender.name
+                teacherDict['role'] = getRole(teacher.user.id)
+                return self.success(teacherDict)  
+        except Exception as exception:
+            return self.error(err=exception.args)
+
 
 
 
@@ -43,16 +105,46 @@ class DeleteStaffAPI(APIView):
             id = request.data.get('id')
             role = request.data.get('role')
             staff_id = request.data.get('staff')
-                # response_object["state_code"] = role
-            if role == 'admin1':
+            role = role.split(',')
+            role = role[0]
+            if role.startswith('admin'):
                 admin = Admin.objects.get(admin_number=staff_id)
+                userId = admin.user.id
+                print(userId)
+                user = User.objects.get(id=userId)
+                user.user_status_id = 3
+                user.save()
                 admin.delete()               
-             # teacher = Teacher.objects.get(id=staff_id)
-                # teacher.delete()
             else: 
-                teacher = Teacher.objects.get(admin_number=staff_id)
+                teacher = Teacher.objects.get(teacher_number=staff_id)
+                userId = teacher.user.id
+                print(userId)
+                user = User.objects.get(id=userId)
+                user.user_status_id = 3
+                user.save()
                 teacher.delete()
-            # role.delete()
+            response_object["state_code"] = 0
+            return self.success(response_object)
+        except Exception as exception:
+            response_object["state_code"] = -1
+            return self.error(err=exception.args, msg=response_object)
+
+
+class ResetPwdAPI(APIView):
+    """
+    重置密码
+    """
+    def post(self, request):
+        response_object = dict()
+        try:
+            userId = request.data.get('id')
+        except Exception as exception:
+            msg = "id:%s\n" % (request.data.get('id'))
+            return self.error(err=[400, msg])
+        try:
+            user = User.objects.get(id=userId)
+            user.password = '0000'
+            user.save()
             response_object["state_code"] = 0
             return self.success(response_object)
         except Exception as exception:
