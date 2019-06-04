@@ -5,7 +5,7 @@ from django.http import HttpResponse, JsonResponse
 from submission.models import ProblemSubmission
 from lab.models import LabSubmission,Attachment
 from django.forms import model_to_dict
-
+import time; 
 
 class GetAllStudentSubmissionAPI(APIView): # 获取一个学生的所有提交记录 #OK#
     def get(self, request):
@@ -30,6 +30,34 @@ class GetUserSubmissionAPI(APIView): #  获取一个学生关于一道题目的�
             del item_result['cases']
             userPersonalSubmissionResult.append(item_result)
         return self.success(userPersonalSubmissionResult)
+
+
+class CreateProblemSubmissionAPI(APIView): #  获取一个学生关于一道题目的提交记录
+    def post(self, request):
+        submission_student_id = int(request.GET.get('student_id'))
+        submission_problem_id = int(request.GET.get('problem_id'))
+        submission_program = str(request.GET.get('program'))
+        submission_create_at= time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) 
+        submission_runtime = int(request.GET.get('runtime'))
+        submission_memory = int(request.GET.get('memory'))
+        submission_ip = str(request.GET.get('ip'))
+        submission_language = int(request.GET.get('language'))
+        submission_status_id = int(request.GET.get('status'))
+
+        submission_result = ProblemSubmission.objects.create(
+            problem=submission_problem_id,
+            student=submission_student_id,
+            program=submission_program,
+            created_at=submission_create_at,
+            runtime=submission_runtime,
+            memory=submission_memory,
+            Ip=submission_ip,
+            language=submission_language,
+            submission_status=submission_status_id,
+            )
+
+        submission_result = model_to_dict(submission_result)
+        return self.success(submission_result)
 
 class AddLabAttachmentAPI(APIView):
     # create submission of a lab
