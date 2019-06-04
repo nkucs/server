@@ -28,13 +28,20 @@ class GetAllStudentSubmissionAPI(APIView): # 获取一个学生的所有提交�
 class GetUserSubmissionAPI(APIView): #  获取一个学生关于一道题目的提交记录
     def get(self, request):
         submission_student_id = int(request.GET.get('student_id'))
-        submission_problem_id = int(request.GET.get('problem_id'))
+        submission_problem_id = int(request.GET.get('problem_id'))  
         # query from database for submissions of student and problem 
+        caseStatusResult = CaseStatus.objects.all()
+        caseStatusDemo = []
+        for item in caseStatusResult:
+            caseStatusDemo.append(model_to_dict(item))
+
         userPersonalSubmission = ProblemSubmission.objects.filter(student=submission_student_id, problem=submission_problem_id)
         userPersonalSubmissionResult = []
         for item in userPersonalSubmission:
             item_result = model_to_dict(item)
             del item_result['cases']
+            item_result['create_at'] = str(item.created_at)
+            item_result['status'] = caseStatusDemo[int(item_result['submission_status'])]['name']
             userPersonalSubmissionResult.append(item_result)
         return self.success(userPersonalSubmissionResult)
 
