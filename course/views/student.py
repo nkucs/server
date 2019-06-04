@@ -16,7 +16,8 @@ class GetAllCourseAPI(APIView):
             del item_result['teachers']
             AllCourseResult.append(item_result)
         return self.success(AllCourseResult)
-        
+
+
 class GetAllMessageAPI(APIView):
     #OK#
     def get(self, request):
@@ -26,6 +27,7 @@ class GetAllMessageAPI(APIView):
             item_result = model_to_dict(item)
             AllMessageResult.append(item_result)
         return self.success(AllMessageResult)
+
 
 class GetMessageOfCourseAPI(APIView):
     #OK#
@@ -38,36 +40,40 @@ class GetMessageOfCourseAPI(APIView):
             AllMessageResult.append(item_result)
         return self.success(AllMessageResult)
 
-class GetMyCourseAPI(APIView):
-    response_class = JSONResponse
 
-    def post(self, request):
-        esponse = dict()
-        student_number = request.GET.get('studentNumber')
-        page_length = request.GET.get('pageLength')
-        page = request.GET.get('page')
-        try:
-            student = Student.objects.get(student_number=student_number)
-            courses_student = Course.students.courses.objects.filter(
-                id_student=student.id)
-            paginator = Paginator(courses_student, page_length)
-            response['totalPages'] = paginator.num_pages
-            try:
-                courses_student = paginator.page(page)
-                response['currentPage'] = page
-            except PageNotAnInteger:
-                courses_student = paginator.page(1)
-                response['currentPage'] = 1
-            except EmptyPage:
-                courses_student = paginator.page(paginator.num_pages)
-                response['currentPage'] = paginator.num_pages
-            courses = list()
-            for course in courses_student:
-                courses.append(course.course)
-            courses_info = list()
-            for course in courses:
-                courses_info.push(course)
-            response['courses'] = courses_info
-            return self.success(response)
-        except Exception as e:
-            return self.error(msg=str(e), err=e.args)
+class GetMyCourseAPI(APIView):
+    # 根据student_number找到他的所有课程
+    def get(self, request):
+        studentNumber = request.GET.get('studentNumber')
+        AllCourse = Course.objects.all()
+        MyCourses = []
+        for item in AllCourse:
+            item_result = model_to_dict(item)
+            for student in item_result['students']:
+                print(student.student_number)
+                stu_num=""+student.student_number
+                if stu_num == studentNumber:
+                    del item_result['students']
+                    del item_result['teachers']
+                    MyCourses.append(item_result)
+                    break
+
+        return self.success(MyCourses)
+
+class GetMyCourseByIDAPI(APIView):
+    # 根据student的user id找到他的所有课程
+    def get(self, request):
+        studentID = request.GET.get('studentID')
+        AllCourse = Course.objects.all()
+        MyCourses = []
+        for item in AllCourse:
+            item_result = model_to_dict(item)
+            for student in item_result['students']:
+                stu_id=str(student.user.id)
+                if stu_id == studentID:
+                    del item_result['students']
+                    del item_result['teachers']
+                    MyCourses.append(item_result)
+                    break
+
+        return self.success(MyCourses)
