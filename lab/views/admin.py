@@ -126,9 +126,6 @@ class CreateLabAPI(APIView):
 
             # 然后为每个练习题建立一个 lab_problem 的条目
             try:
-                lab_problems =  LabProblem.objects.all()
-                print(lab_problems.values())
-
                 for code in problems_code_list:
                     problem = Problem.objects.get(code=code)
                     lab_problem = LabProblem.objects.create(
@@ -156,6 +153,7 @@ class EditLabAPI(APIView):
             attachment_weight = int(request.data['attachment_weight'])
             report_required = request.data['report_required']
             problems = request.data['problems']
+            problems_code_list = [pro['id'] for pro in problems]
 
             if report_required == 'y':
                 report_required = True
@@ -178,6 +176,26 @@ class EditLabAPI(APIView):
                 problem_weight=100 - attachment_weight,
                 report_required=report_required
             )
+
+            try:
+                lab = Lab.objects.get(id=lab_id)
+                lab_problems = LabProblem.objects.filter(lab=lab)
+                for lp in lab_problems:
+                    if (lp.problem.code not in [code for code in problems_code_list]):
+                        lp.delete()
+                for code in problems_code_list:
+                    problem = Problem.objects.get(code=code)
+                    try:
+                        lab_problem = LabProblem.objects.get(lab=lab, problem=problem)
+                    except Exception as exception:
+                        print("add a new lab_problem")
+                        LabProblem.objects.create(
+                            lab=lab,
+                            problem=problem,
+                            weight=100 - attachment_weight,
+                            language=63)
+            except Exception as exception:
+                return self.error(err=exception, msg=str(exception))
             response_object["state_code"] = 200
             return self.success(response_object)
         except Exception as exception:
