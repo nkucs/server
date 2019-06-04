@@ -1,9 +1,10 @@
 from course.models import Course, CourseResource
 from problem.models import Problem
 from utils.api import APIView, JSONResponse, FILEResponse
-from ..serializers import LabSerializers, GetLabSerializer, GetProblemsSerializer
-from ..models import Lab
+from ..serializers import LabSerializers, GetLabSerializer, GetProblemsSerializer, GetLabProblemsSerializer
+from ..models import Lab, LabProblem
 import datetime
+
 
 class FilterProblemsAPI(APIView):
     response_class = JSONResponse
@@ -15,32 +16,66 @@ class FilterProblemsAPI(APIView):
             page = int(request.GET.get('page'))
             tag_name = request.GET.get('tag_name')
             problem_name = request.GET.get('problem_name')
+            teacher_name = request.GET.get('teacher_name')
         except Exception as exception:
             return self.error(err=exception.args,
                               msg="page:%s, tag_name:%s, code: %s, problem_name: %s\n" % (request.GET.get('page'), request.GET.get('tag_name'), request.GET.get('code'),request.GET.get('problem_name'),))
-
         try:
-            query_result = None
             if code != '':
                 query_result = Problem.objects.filter(code=code)
             else:
-                if problem_name != '':
-                    query_result = Problem.objects.filter(name__icontains=problem_name)
-                    if tag_name != '':
-                        query_result = query_result.filter(tags__name__icontains=tag_name)
-                else:
-                    query_result = Problem.objects.all()
-                    if tag_name != '':
-                        query_result = query_result.filter(tags__name__icontains=tag_name)
-                    else:
-                        print('find all problems：', query_result.count())
+                query_result = Problem.objects.filter(name__icontains=problem_name)\
+                    .filter(tags__name__icontains=tag_name)\
+                    .filter(teacher__user__name__icontains=teacher_name)
+            teacher_name_list = list()
+            tag_name_list = list()
+            for prob in query_result:
+                teacher_name_list.append(prob.teacher.user.name)
+                tag_name_list.append([tag.name for tag in prob.tags.all()])
 
             problems_count = query_result.count()
-            problems_list = query_result[(page-1) * list_count: page * list_count].values()
-            # update response object
+            problems_list = query_result[(page-1) * list_count: page * list_count]
+            teacher_name_list = teacher_name_list[(page-1) * list_count: page * list_count]
+            tag_name_list = tag_name_list[(page-1) * list_count: page * list_count]
             response_object['total_pages'] = problems_count // list_count + 1
             response_object['current_page'] = page
+            response_object['teacher_names'] = teacher_name_list
+            response_object['tag_names'] = tag_name_list
             response_object['problems'] = GetProblemsSerializer(problems_list, many=True).data
+            return self.success(response_object)
+        except Exception as exception:
+            return self.error(err=exception.args, msg=str(exception))
+
+
+class GetProblemsAPI(APIView):
+    '''
+    根据实验id 获取与该实验关联的所有题目
+    GET 方法
+    '''
+    response_class = JSONResponse
+    def get(self, request):
+        response_object = dict()
+        try:
+            lab_id = int(request.GET.get('lab_id'))
+        except Exception as exception:
+            return self.error(err=exception.args,
+                              msg="lab_id:%s \n" % (request.GET.get('lab_id')))
+        try:
+            lab = Lab.objects.get(id=lab_id)
+            lab_problems = LabProblem.objects.filter(lab=lab)
+            problems = []
+            for lp in lab_problems:
+                problems.append(lp.problem)
+
+            teacher_name_list = list()
+            tag_name_list = list()
+            for prob in problems:
+                teacher_name_list.append(prob.teacher.user.name)
+                tag_name_list.append([tag.name for tag in prob.tags.all()])
+
+            response_object['teacher_names'] = teacher_name_list
+            response_object['tag_names'] = tag_name_list
+            response_object['problems'] = GetProblemsSerializer(problems, many=True).data
             return self.success(response_object)
         except Exception as exception:
             return self.error(err=exception.args, msg=str(exception))
@@ -60,6 +95,7 @@ class CreateLabAPI(APIView):
             attachment_weight = int(request.data['attachment_weight'])
             report_required = request.data['report_required']
             problems = request.data['problems']
+            problems_code_list = [pro['id'] for pro in problems]
 
             if report_required == 'y':
                 report_required = True
@@ -87,7 +123,19 @@ class CreateLabAPI(APIView):
             )
             print(lab)
             response_object['lab_id'] = lab.id
-            return self.success(response_object)
+
+            # 然后为每个练习题建立一个 lab_problem 的条目
+            try:
+                for code in problems_code_list:
+                    problem = Problem.objects.get(code=code)
+                    lab_problem = LabProblem.objects.create(
+                        lab=lab,
+                        problem=problem,
+                        weight=100-attachment_weight,
+                        language=63)
+                return self.success(response_object)
+            except Exception as exception:
+                return self.error(err=exception, msg=str(exception))
         except Exception as exception:
             return self.error(err=exception, msg=str(exception))
 
@@ -105,6 +153,7 @@ class EditLabAPI(APIView):
             attachment_weight = int(request.data['attachment_weight'])
             report_required = request.data['report_required']
             problems = request.data['problems']
+            problems_code_list = [pro['id'] for pro in problems]
 
             if report_required == 'y':
                 report_required = True
@@ -127,6 +176,26 @@ class EditLabAPI(APIView):
                 problem_weight=100 - attachment_weight,
                 report_required=report_required
             )
+
+            try:
+                lab = Lab.objects.get(id=lab_id)
+                lab_problems = LabProblem.objects.filter(lab=lab)
+                for lp in lab_problems:
+                    if (lp.problem.code not in [code for code in problems_code_list]):
+                        lp.delete()
+                for code in problems_code_list:
+                    problem = Problem.objects.get(code=code)
+                    try:
+                        lab_problem = LabProblem.objects.get(lab=lab, problem=problem)
+                    except Exception as exception:
+                        print("add a new lab_problem")
+                        LabProblem.objects.create(
+                            lab=lab,
+                            problem=problem,
+                            weight=100 - attachment_weight,
+                            language=63)
+            except Exception as exception:
+                return self.error(err=exception, msg=str(exception))
             response_object["state_code"] = 200
             return self.success(response_object)
         except Exception as exception:

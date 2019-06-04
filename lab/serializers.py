@@ -12,6 +12,12 @@ class GetProblemsSerializer(serializers.ModelSerializer):
         fields =  '__all__'
 
 
+class GetLabProblemsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LabProblem
+        fields =  '__all__'
+
+
 class LabSerializers(serializers.ModelSerializer):
     lab_id = serializers.SerializerMethodField()
 
