@@ -235,11 +235,12 @@ class GetLabsAPI(APIView):
 
 class DeleteLabAPI(APIView):
     def post(self, request):
+        print('in delete lab api')
         try:
-            lab_id = int(request.POST.get('lab_id'))
+            lab_id = int(request.GET['lab_id'])
             Lab.objects.get(id=lab_id).delete()
         except Exception as e:
-            return self.error(err=e.args, msg="lab_id: %s"%(request.POST.get('lab_id')))
+            return self.error(err=e.args, msg="lab_id: %s"%(request.GET('lab_id')))
         else:
             return self.success({'msg': 'success'})
 
