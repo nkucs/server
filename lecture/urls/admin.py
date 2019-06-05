@@ -14,6 +14,7 @@ urlpatterns = [
     url(r'download-file/?$', admin.file_download,name="download-file"),
     url(r'get-lecture-by-name/?$', GetLectureByNameAPI.as_view(), name="get-lecture-by-name"),
     url(r'edit-lecture/?$', EditLectureAPI.as_view(), name="edit-lecture"),
+    url(r'edit-problems/?$', EditProblems.as_view(), name="edit-problems"),
     url(r'delete-lecture/?$', DeleteLectureAPI.as_view(), name="delete-lecture"),
     url(r'add-file/?$', AddFileAPI.as_view(), name="add-file"),
     url(r'get-lecture/?$',GetLectureAPI.as_view(), name="get-lecture")
