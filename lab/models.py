@@ -25,7 +25,7 @@ class Lab(models.Model):
 class LabProblem(models.Model):
     """实验课编程题联系表"""
 
-    lab = models.ForeignKey(Lab, on_delete=models.CASCADE)
+    lab = models.ForeignKey(Lab, related_name="problem", on_delete=models.CASCADE)
     problem = models.ForeignKey(Problem, on_delete=models.CASCADE)
     weight = models.IntegerField()
     language = models.IntegerField()
@@ -46,7 +46,7 @@ class LabSubmission(models.Model):
 class Attachment(models.Model):
     """学生提交的附件"""
 
-    lab_submission = models.ForeignKey(LabSubmission, null=True, on_delete=models.SET_NULL)
+    lab_submission = models.ForeignKey(LabSubmission, null=True, on_delete=models.SET_NULL, related_name='attachment')
     file = models.FileField(upload_to='uploads/attachments/%Y/%m/')
 
 
