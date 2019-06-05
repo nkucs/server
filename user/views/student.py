@@ -12,9 +12,12 @@ from django.forms import model_to_dict
 class GetStudentAPI(APIView):
     def get(self, request):
         # get information from frontend #OK#
-        id_student = int(request.GET.get('id_student'))
-        NowStudent = Student.objects.get(id=id_student) 
-        return self.success(model_to_dict(NowStudent))
+        id_user = int(request.GET.get('id_user'))
+        NowStudent = Student.objects.get(user=id_user)
+        NowStudentResult = model_to_dict(NowStudent)
+        del NowStudentResult['followers']
+        del NowStudentResult['achievements']
+        return self.success(NowStudentResult)
 
 def LoginStudentAPI(APIView):
     # Login API
