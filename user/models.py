@@ -35,7 +35,7 @@ class User(AbstractUser):
     email = models.EmailField(null=True, blank=True)
     gender = models.ForeignKey(Gender, default=Gender.default, on_delete=models.SET_DEFAULT)
 
-    USERNAME_FIELD = 'id'
+    USERNAME_FIELD = 'username'
 
 
 class Role(models.Model):

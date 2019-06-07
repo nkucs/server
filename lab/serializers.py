@@ -1,17 +1,44 @@
+from datetime import datetime, timezone, timedelta
 from rest_framework import serializers
-from .models import Lab, LabProblem, LabSubmission
+
+from user.models import Student
+from problem.models import Problem
+from .models import Lab, LabProblem, LabSubmission, Attachment
 from course.models import CourseResource
+
+
+class GetProblemsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Problem
+        fields =  '__all__'
+
+
+class GetLabProblemsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LabProblem
+        fields =  '__all__'
 
 
 class LabSerializers(serializers.ModelSerializer):
     lab_id = serializers.SerializerMethodField()
-
+    start_time = serializers.SerializerMethodField()
+    end_time = serializers.SerializerMethodField()
     class Meta:
         model = Lab
-        fields = ('lab_id', 'name')
+        fields = ('lab_id', 'name', 'start_time', 'end_time')
 
     def get_lab_id(self, obj):
         return obj['id']
+    
+    def get_start_time(self, obj):
+        temp = obj['start_time'].astimezone(timezone(timedelta(hours=8)))
+        return_datatime = datetime.strftime(temp,'%Y-%m-%d %H:%M:%S')
+        return (return_datatime)
+    
+    def get_end_time(self, obj):
+        temp = obj['end_time'].astimezone(timezone(timedelta(hours=8)))
+        return_datatime = datetime.strftime(temp,'%Y-%m-%d %H:%M:%S')
+        return (return_datatime)
 
 
 class GetLabFileSerializer(serializers.ModelSerializer):
@@ -36,7 +63,7 @@ class GetLabSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lab
         fields = ('name', 'description', 'start_time',
-                  'end_time', 'report_required', 'files')
+                  'end_time', 'report_required', 'files', 'attachment_weight')
 
     def get_files(self, obj):
         return GetLabFileSerializer(obj.resources, many=True).data
@@ -52,7 +79,7 @@ class GetLabListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Lab
-        fields = ('name', 'start_time', 'end_time')
+        fields = ('id', 'name', 'start_time', 'end_time')
 
 
 class LabProblemSerializer(serializers.ModelSerializer):
@@ -92,3 +119,44 @@ class GetLabDetailSerializer(serializers.ModelSerializer):
         model = Lab
         fields = ('name', 'description', 'start_time', 'end_time', \
                   'report_required', 'problem_weight', 'attachment_weight', 'problem')
+
+
+class AttachmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Attachment
+        fields = "__all__"
+
+
+class LabSubmissionSerializer(serializers.ModelSerializer):
+    attachment = AttachmentSerializer(many=True)
+
+    class Meta:
+        model = LabSubmission
+        fields = "__all__"
+
+# class LabSubmissionSerializer(serializers.ModelSerializer):
+#     """
+#
+#     """
+#     class Meta:
+#         model = LabSubmission
+#         fields = ('lab', 'student')
+#
+#
+# class AttachmentSerializer(serializers.Serializer):
+#     """
+#     Serialize an attachment object.
+#     """
+#     user_id = serializers.IntegerField()
+#     lab_id = serializers.IntegerField()
+#     file = serializers.FileField()
+#
+#     def create(self, validated_data):
+#         lab = Lab.objects.get(id=validated_data.get('lab_id'))
+#         user = Student.objects.get(id=validated_data.get('user_id'))
+#         file = validated_data.get('file')
+#         lm = LabSubmission.objects.create(lab=lab, student=user)
+#         lm.save()
+#         am = Attachment.objects.create(lab_submission=lm, file=file)
+#         am.save()
+#         return am

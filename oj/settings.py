@@ -34,6 +34,7 @@ VENDOR_APPS = [
 
     # installed middleware
     'rest_framework',
+    'rest_framework_swagger',
 ]
 
 LOCAL_APPS = [
@@ -44,7 +45,7 @@ LOCAL_APPS = [
     'lecture',
     'problem',
     'submission',
-    'user',
+    'user.apps.UserConfig',
     'utils',
 ]
 
@@ -61,9 +62,9 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
 ]
 
-ROOT_URLCONF = 'oj.urls'
-
 CORS_ORIGIN_ALLOW_ALL = True
+
+ROOT_URLCONF = 'oj.urls'
 
 TEMPLATES = [
     {
@@ -122,5 +123,13 @@ REST_FRAMEWORK = {
     'TEST_REQUEST_DEFAULT_FORMAT': 'json',
     'DEFAULT_RENDERER_CLASSES': (
         'rest_framework.renderers.JSONRenderer',
+    ),
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.SessionAuthentication'
     )
 }
+
+SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
+
+SESSION_SAVE_EVERY_REQUEST = True

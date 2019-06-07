@@ -1,10 +1,16 @@
 import math
+from importlib import import_module
+from django.http import HttpResponse
+from django.contrib import auth
+from django.contrib.auth import authenticate
 from django.contrib.auth.models import Group
-from django.db.models import Model
-
+from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from utils.api import APIView, JSONResponse
 from ..serializers import RoleSerializers, TeacherSerializer
-from ..models import Role, Permission, User
+from ..models import Role, Permission, User, Student, Teacher, Admin, Gender, UserStatus
+from django.db.models import Model
 
 
 class GetRoleAPI(APIView):
@@ -64,8 +70,7 @@ class CreateRoleAPI(APIView):
         except Exception as exception:
             msg = "name:%s, description:%s\n" % (
                 request.data.get('name'),
-                request.data.get('description'),
-                request.data.get('permission'))
+                request.data.get('description'))
             return self.error(err=[400, msg])
         try:
             # insert new role into database
@@ -145,8 +150,7 @@ class ModifyRoleAPI(APIView):
         except Exception as exception:
             msg = "name:%s, description:%s\n" % (
                 request.data.get('name'),
-                request.data.get('description'),
-                request.data.get('permission'))
+                request.data.get('description'))
             return self.error(err=[400, msg])
         try:
             # update role
@@ -163,6 +167,53 @@ class ModifyRoleAPI(APIView):
             response_object["state_code"] = -1
             return self.error(err=exception.args, msg=response_object)
 
+class UserLoginAPI(APIView):
+    """用户登录"""
+    authentication_classes = (SessionAuthentication, BasicAuthentication)
+    response_class = HttpResponse
+
+    @csrf_exempt
+    def post(self, request, usertype):
+        response_object = dict()
+        data = request.data        
+        validType = ['stud', 'admi', 'teac']
+        username = data["username"]
+        password = data["password"]
+        remember = data["rememberMe"]
+        if usertype not in validType:
+            msg = "Illegal login request."
+            return self.error(err=msg)
+
+        user = authenticate(username=username, password=password)
+        if not user:
+            msg = "Wrong username or password"
+            return self.error(err=msg)
+
+        if usertype == 'stud':
+            specuser = Student.objects.filter(user=user)
+        elif usertype == 'teac':
+            specuser = Teacher.objects.filter(user=user)
+        else:
+            specuser = Admin.objects.filter(user=user)
+        if not specuser.exists():
+            msg = "Permission denied."
+            return self.error(err=msg)
+
+        auth.login(request, user)
+        if not remember:
+            request.session.set_expiry(0)
+        else:
+            request.session.set_expiry(60 * 60 * 24 * 30)
+        response_object["user_id"] = user.id
+        return self.success(response_object)
+
+class UserLogoutAPI(APIView):
+    """用户退出登录"""
+    def get(self, request):
+        response_object = dict()
+        auth.logout(request)
+        response_object["state_code"] = 0
+        return self.success(response_object)
 
 class Paginator:
     """分页器"""
@@ -230,6 +281,7 @@ class GetRoleAddTeacherListAPI(APIView):
 
     def get(self, request):
         role_id = int(request.GET.get('id', 0))
+        print('role_id:', role_id)
         page = int(request.GET.get('page', 1))
         page_size = int(request.GET.get('page_size', 10))
         name_filter = request.GET.get('name', '')
@@ -238,7 +290,7 @@ class GetRoleAddTeacherListAPI(APIView):
 
         try:
             group = Group.objects.get(id=role_id)
-        except Model.DoesNotExist:
+        except Group.DoesNotExist:
             return self.error(err=404, msg='Role does not exist.')
 
         users = User.objects.exclude(groups=group)
@@ -255,8 +307,8 @@ class GetRoleAddTeacherListAPI(APIView):
         return self.success(data=paginator.get_response())
 
 
-class RoleTeacherAPI(APIView):
-    """分配角色或删除分配"""
+class RoleTeacherAddAPI(APIView):
+    """分配角色"""
 
     def post(self, request):
         distributions = request.data.get('distribution', [])
@@ -277,7 +329,11 @@ class RoleTeacherAPI(APIView):
 
         return self.success({'state_code': 0})
 
-    def delete(self, request):
+
+class RoleTeacherDeleteAPI(APIView):
+    """删除分配"""
+
+    def post(self, request):
         remove_list = request.data.get('distribution', [])
 
         for remove_item in remove_list:
@@ -295,3 +351,113 @@ class RoleTeacherAPI(APIView):
             group.user_set.remove(user)
 
         return self.success({'state_code': 0})
+
+
+class CreateStudentAPI(APIView):
+    """新建学生"""
+    response_class = JSONResponse
+
+    def post(self, request):
+        response_object = dict()
+        try:
+            name = request.data.get('name')
+            username = request.data.get('account')
+            student_number = request.data.get('student_number')
+            gender = request.data.get('gender')
+            room = request.data.get('room')
+            province = int(request.data.get('province'))
+            status = request.data.get('status')
+            class_name = request.data.get('class_name')
+            if name is None or username is None or student_number is None or room is None or province is None or status is None or class_name is None or gender is None:
+                raise Exception()
+        except Exception as exception:
+            msg = "name:%s, description:%s \n" % (
+                request.data.get('name'),
+                request.data.get('account'))
+            return self.error(err=[400, msg])
+
+        try:
+            # insert new role into database
+            if UserStatus.objects.filter(name=status).count() is 0:
+                UserStatus.objects.create(name=status)
+            status_ = UserStatus.objects.get(name=status)       
+            if Gender.objects.filter(name=gender).count() is 0:
+                Gender.objects.create(name=gender)
+            gender_ = Gender.objects.get(name=gender)
+            User.objects.create(username=username,name=name,user_status=status_,gender=gender_)
+            user = User.objects.get(username=username)
+            Student.objects.create(student_number=student_number,user=user,room=room,province=province,class_name=class_name)
+            response_object["state_code"] = 0
+            return self.success(response_object)
+        except Exception as exception:
+            response_object["state_code"] = -1
+            return self.error(err=exception.args, msg=response_object)
+
+
+class GetStudentAPI(APIView):
+    response_class = JSONResponse
+
+    # get方法，参数用params放在url后面
+
+    def get(self, request):
+        # get information from frontend
+        try:
+            student_number = request.GET.get('student_number')
+        except Exception as exception:
+            msg = "id_role:%s\n" % (request.GET.get('student_number'))
+            return self.error(err=[400, msg])
+        try:
+            student = Student.objects.get(student_number=student_number)
+            ansDict = dict()
+            ansDict['name'] = student.user.name
+            ansDict['username'] = student.user.username
+            ansDict['gender'] = student.user.gender.name
+            ansDict['room'] = student.room
+            ansDict['province'] = str(student.province)
+            ansDict['class_name'] = student.class_name
+            ansDict['status'] = student.user.user_status.name
+            return self.success(ansDict)
+        except Exception as exception:
+            return self.error(err=exception.args)
+
+
+class UpdateStudentAPI(APIView):
+    """修改学生信息"""
+    response_class = JSONResponse
+
+    def post(self, request):
+        response_object = dict()
+        try:
+            name = request.data.get('name')
+            username = request.data.get('account')
+            student_number = request.data.get('student_number')
+            gender = request.data.get('gender')
+            room = request.data.get('room')
+            province = int(request.data.get('province'))
+            status = request.data.get('status')
+            class_name = request.data.get('class_name')
+            if name is None or username is None or student_number is None or room is None or province is None or status is None or class_name is None or gender is None:
+                raise Exception()
+        except Exception as exception:
+            msg = "name:%s, description:%s \n" % (
+                request.data.get('name'),
+                request.data.get('account'))
+            return self.error(err=[400, msg])
+
+        try:
+            # insert new role into database
+            student = Student.objects.get(student_number=student_number)
+            if Gender.objects.filter(name=gender).count() is 0:
+                Gender.objects.create(name=gender)
+            if UserStatus.objects.filter(name=status).count() is 0:
+                UserStatus.objects.create(name=status)           
+            new_status = UserStatus.objects.get(name=status)
+            new_gender = Gender.objects.get(name=gender)
+            user_id = student.user.id
+            User.objects.filter(id=user_id).update(name=name,username=username,gender=new_gender,user_status=new_status)
+            Student.objects.filter(student_number=student_number).update(room=room,province=province,class_name=class_name)
+            response_object["state_code"] = 0
+            return self.success(response_object)
+        except Exception as exception:
+            response_object["state_code"] = -1
+            return self.error(err=exception.args, msg=response_object)

@@ -2,7 +2,6 @@ from rest_framework.permissions import BasePermission
 from django.contrib.auth.models import Group
 from .models import Permission
 
-
 def getPermission(request, index):
     user = request.user
     groups = Group.objects.filter(user=user)

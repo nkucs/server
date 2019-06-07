@@ -18,7 +18,3 @@ class ProblemSubmissionTimeSerializers(serializers.ModelSerializer):
         model = ProblemSubmission
         fields = ('id', 'problem', 'student','student_number','all_cases_count','succeed_cases_count','created_at','language')
 
-
-
-
-
