@@ -42,4 +42,5 @@ urlpatterns = [
     url(r"^teacher/submission/statistics/",
         include("submission.urls.statistics")),
     url(r"^distribution/", include("submission.urls.statistics")),
+    url(r"^teacher/exam/", include("exam.urls.admin")),
 ]

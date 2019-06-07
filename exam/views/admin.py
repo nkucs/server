@@ -163,3 +163,27 @@ class GetAllContentAPI(APIView):
         except Exception as e:
             # not found
             return self.error(msg=str(e), err=e.args)
+
+
+class GetExamProblemAPI(APIview):
+response_class = JSONResponse
+    def get(self, request):
+        
+        exam_id=request.GET.get('exam_id')
+        type=request.GET.get('type')
+        try:
+            problem_list = ExamProblem.objects.get(exam_id =exam_id,type = type )
+            return self.success(problem_list)
+        except Exception as e:
+            return self.error(msg=str(e), err=e.args)
+            
+class GetExamByIdAP(APIview):
+response_class = JSONResponse
+    def get(self, request):
+        
+        exam_id=request.GET.get('exam_id')
+        try:
+            exam = Exam.objects.get(exam_id =exam_id)
+            return self.success(exam)
+        except Exception as e:
+            return self.error(msg=str(e), err=e.args)
